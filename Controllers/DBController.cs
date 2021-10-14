@@ -51,7 +51,6 @@ namespace forgeSample.Controllers
 			//env var
 			string dbProvider = "ORACLE";
 
-
 			switch (dbProvider.ToLower())
 			{
 				case "oracle":
