@@ -12,11 +12,20 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
+        "MONGODG_ASSET_DBNAME": "propertydbextension",
+        "MONGODG_MAP_DBNAME": "propertydbextension",
         "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth",
-        "DB_CON_STRING": "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=test.fac.clemson.edu)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=aimdev)));User Id=adsk;Password=clemson123;",
         "FORGE_CLIENT_SECRET": "Ca219ddf642bf471",
+        "DB_PROVIDER": "oracle",
+        "DB_TABLE_NAME": "aim.ae_a_asset_e",
+        "MONGODB_MAP_COLLECTION": "externalidtotag",
+        "DB_FILTER_PROPERTY": "ASSET_TAG",
+        "MONGODB_ASSET_COLLECTION": "assetscollection",
         "FORGE_CLIENT_ID": "YwbADcV8nGDprNDtxdg0oUBSUHUuRtKr",
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "MONGODB_CON_STRING": "mongodb+srv://forge_user:gQgAbqOnIoumdWUp@cluster0.bjupz.mongodb.net/hangfire?retryWrites=true&w=majority",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ORACLEDB_CON_STRING": "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=test.fac.clemson.edu)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=aimdev)));User Id=adsk;Password=clemson123;",
+        "DB_PROPERTIES_NAMES": "ASSET_TAG,ASSET_TYPE,DESCRIPTION,EDIT_DATE,LONG_DESC,STATUS_CODE,ASSET_GROUP,TAG_NUMBER"
       }
     },
     "forge_viewer_db_properties": {

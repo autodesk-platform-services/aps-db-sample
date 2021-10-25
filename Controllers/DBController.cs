@@ -68,7 +68,49 @@ namespace forgeSample.Controllers
 
 		public async Task ExtractDataFromMongoDB( string connectionId, string externalId)
 		{
-			throw new NotImplementedException();
+			string dbTag = await GetMappIds(externalId);
+
+			if (dbTag != "")
+			{
+				string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
+				string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
+				string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
+
+				try
+				{
+					BsonClassMap.RegisterClassMap<MongoTag>();
+				}
+				catch (Exception)
+				{
+
+				}
+
+				var client = new MongoClient(connectionString);
+
+				var database = client.GetDatabase(dbName);
+
+				var items = database.GetCollection<MongoTag>(collection);
+
+				List<MongoTag> matches = items.Find(asset => asset.ASSET_TAG == dbTag).ToList();
+
+				string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
+
+				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
+				foreach (var property in typeof(MongoTag).GetProperties())
+				{
+					newRow[property.Name] = matches[0].;
+				}
+				newRow["Status"] = "Connection Succeeded";
+				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+
+			}
+			else
+			{
+				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
+				newRow["Status"] = "Connection Succeeded";
+				newRow["ASSET_TAG"] = "not found!";
+				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+			}
 		}
 
 		public async Task ExtractDataFromOracleDB(string connectionId, string externalId)
@@ -78,38 +120,26 @@ namespace forgeSample.Controllers
 			if (dbTag != "")
 			{
 				//Create connection string. Check whether DBA Privilege is required.
-				string conStringDBA = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=test.fac.clemson.edu)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=aimdev)));User Id=adsk;Password=clemson123;";
-
-				using OracleConnection con = new OracleConnection(conStringDBA);
+				string connectionString = Credentials.GetAppSetting("ORACLEDB_CON_STRING");
+				
+				using OracleConnection con = new OracleConnection(connectionString);
 				using OracleCommand cmd = con.CreateCommand();
 				try
 				{
 					con.Open();
 
 					//Environment vars
-					string[] propFields =
-					{
-							"ASSET_TAG",
-							"ASSET_TYPE",
-							"DESCRIPTION",
-							"EDIT_DATE",
-							"LONG_DESC",
-							"STATUS_CODE",
-							"ASSET_GROUP",
-							"TAG_NUMBER"
-						};
-					//Environment vars
-					string tableName = "aim.ae_a_asset_e";
-					string filterField = "ASSET_TAG";
+					string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
+					string tableName = Credentials.GetAppSetting("DB_TABLE_NAME");
+					string filterField = Credentials.GetAppSetting("DB_FILTER_PROPERTY");
 
 					//Modify the anonymous PL/SQL GRANT command if you wish to modify the privileges granted
-					cmd.CommandText = "select " + String.Join(",", propFields) + " from " + tableName + " where " + filterField + "= \'" + dbTag +"\'";
+					cmd.CommandText = "select " + propFields + " from " + tableName + " where " + filterField + "= \'" + dbTag + "\'";
 					OracleDataReader reader = cmd.ExecuteReader();
 					while (reader.Read())
 					{
-						//dynamic newRow = new System.Dynamic.ExpandoObject();
 						Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-						foreach (var field in propFields)
+						foreach (var field in propFields.Split(","))
 						{
 							newRow[field] = reader[field];
 						}
@@ -138,9 +168,9 @@ namespace forgeSample.Controllers
 		public async Task<string> GetMappIds(string externalId)
 		{
 			//env vars
-			string connectionString = "mongodb+srv://forge_user:gQgAbqOnIoumdWUp@cluster0.bjupz.mongodb.net/hangfire?retryWrites=true&w=majority";
-			string dbName = "propertydbextension";
-			string collection = "externalidtotag";
+			string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
+			string dbName = Credentials.GetAppSetting("MONGODG_MAP_DBNAME");
+			string collection = Credentials.GetAppSetting("MONGODB_MAP_COLLECTION");
 
 			try
 			{
@@ -170,6 +200,14 @@ namespace forgeSample.Controllers
 	{
 		public string dbTag { get; set; }
 		public string externalId { get; set; }
+	}
 
+	[BsonIgnoreExtraElements]
+	public class MongoTag
+	{
+		public string ASSET_TAG { get; set; }
+		public string ASSET_TYPE { get; set; }
+		public string DESCRIPTION { get; set; }
+		public int TAG_NUMBER { get; set; }
 	}
 }

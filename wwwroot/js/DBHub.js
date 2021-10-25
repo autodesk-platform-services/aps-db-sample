@@ -22,25 +22,6 @@ connection.on("ReceiveProperties", function (externalId, properties) {
   viewer.model.getExternalIdMapping(idsMap => addProperties(idsMap, externalId, properties));
 });
 
-async function addProperties(idsMap, externalId, properties) {
-  let dbId = idsMap[externalId];
-  let ext = viewer.getExtension('DBPropertiesExtension');
-
-  if (!ext.panel.properties[dbId]) {
-    ext.panel.properties[dbId] = {
-      "Properties From DB": {
-
-      }
-    };
-  }
-
-  for (const property of Object.keys(properties)) {
-    ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
-  }
-  $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
-}
-
-
 connection.start().then(function () {
   //No function for now
 }).catch(function (err) {

@@ -59,39 +59,39 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     });
   }
 
-  onKeyDown(event) {
-    console.log(event);
-    if (!!this.currentProperty) {
-      switch (event.keyCode) {
-        case 8:
-          this.currentText = "";
-          this.updateCurrentProperty();
-          break;
-        case 13:
-          this.sendChanges();
-          break;
-        default:
-          this.currentText += event.key;
-          this.updateCurrentProperty();
-          break;
-      }
-    }
-    event.handled = true;
-  }
+  //onKeyDown(event) {
+  //  console.log(event);
+  //  if (!!this.currentProperty) {
+  //    switch (event.keyCode) {
+  //      case 8:
+  //        this.currentText = "";
+  //        this.updateCurrentProperty();
+  //        break;
+  //      case 13:
+  //        this.sendChanges();
+  //        break;
+  //      default:
+  //        this.currentText += event.key;
+  //        this.updateCurrentProperty();
+  //        break;
+  //    }
+  //  }
+  //  event.handled = true;
+  //}
 
   sendChanges() {
     alert("Changes sent to DB!");
   }
 
-  async updateCurrentProperty() {
-    try {
-      // await this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
-    }
-    catch { }
-    // await this.removeProperty(this.currentProperty.name.slice(), this.currentProperty.value.slice(), this.currentProperty.category.slice());
-    await this.addProperty(this.currentProperty.name, this.currentText, this.currentProperty.category);
-    this.currentProperty.value = this.currentText;
-  }
+  //async updateCurrentProperty() {
+  //  try {
+  //    // await this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
+  //  }
+  //  catch { }
+  //  // await this.removeProperty(this.currentProperty.name.slice(), this.currentProperty.value.slice(), this.currentProperty.category.slice());
+  //  await this.addProperty(this.currentProperty.name, this.currentText, this.currentProperty.category);
+  //  this.currentProperty.value = this.currentText;
+  //}
 
   onPropertyClick(property, event) {
     this.currentProperty = property;
@@ -99,6 +99,67 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     console.log("Current property changed to " + property.name + " = " + property.value);
   }
 };
+
+//Here we add the properties aquired from DB to the proper dbid proper property panel
+async function addProperties(idsMap, externalId, properties) {
+  let dbId = idsMap[externalId];
+  let ext = viewer.getExtension('DBPropertiesExtension');
+
+  if (!ext.panel.properties[dbId]) {
+    ext.panel.properties[dbId] = {
+      "Properties From DB": {
+
+      }
+    };
+  }
+
+  for (const property of Object.keys(properties)) {
+    ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
+  }
+  $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
+}
+
+//Here we reach the server endpoint to retrieve the proper data from DB
+async function extractDBData(externalId) {
+  try {
+    const requestUrl = '/api/dbconnector';
+    const requestData = {
+      'connectionId': connection.connection.connectionId,
+      'externalId': externalId
+    };
+    apiClientAsync(requestUrl, requestData);
+    $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
+  }
+  catch (err) {
+    console.log(err);
+    $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+  }
+}
+
+// helper function for Request
+function apiClientAsync(requestUrl, requestData = null, requestMethod = 'get') {
+  let def = $.Deferred();
+
+  if (requestMethod == 'post') {
+    requestData = JSON.stringify(requestData);
+  }
+
+  jQuery.ajax({
+    url: requestUrl,
+    contentType: 'application/json',
+    type: requestMethod,
+    dataType: 'json',
+    data: requestData,
+    success: function (res) {
+      def.resolve(res);
+    },
+    error: function (err) {
+      console.error('request failed:');
+      def.reject(err)
+    }
+  });
+  return def.promise();
+}
 
 // *******************************************
 // DB Properties Extension
