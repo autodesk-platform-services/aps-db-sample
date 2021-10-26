@@ -46,17 +46,32 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     // add your custom properties here
     const dbids = propertySet.getDbIds();
     dbids.forEach(id => {
-      var propsForObject = this.properties[id.toString()];
-      if (propsForObject) {
-        for (const groupName in propsForObject) {
-          const group = propsForObject[groupName];
-          for (const propName in group) {
-            const prop = group[propName];
-            this.addProperty(propName, prop, groupName);
-          }
+      //var propsForObject = this.properties[id.toString()];
+      //if (propsForObject) {
+      //  for (const groupName in propsForObject) {
+      //    const group = propsForObject[groupName];
+      //    for (const propName in group) {
+      //      const prop = group[propName];
+      //      this.addProperty(propName, prop, groupName);
+      //    }
+      //  }
+      //}
+
+      this.setdbIdProperties(id);
+    });
+  }
+
+  setdbIdProperties(dbId) {
+    var propsForObject = this.properties[dbId.toString()];
+    if (propsForObject) {
+      for (const groupName in propsForObject) {
+        const group = propsForObject[groupName];
+        for (const propName in group) {
+          const prop = group[propName];
+          this.addProperty(propName, prop, groupName);
         }
       }
-    });
+    }
   }
 
   //onKeyDown(event) {
@@ -111,6 +126,7 @@ async function addProperties(idsMap, externalId, properties) {
 
       }
     };
+    ext.panel.setdbIdProperties(dbId);
   }
 
   for (const property of Object.keys(properties)) {
