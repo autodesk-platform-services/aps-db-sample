@@ -125,7 +125,8 @@ async function extractDBData(externalId) {
     const requestUrl = '/api/dbconnector';
     const requestData = {
       'connectionId': connection.connection.connectionId,
-      'externalId': externalId
+      'externalId': externalId,
+      'dbProvider': $('#dboptions').find(":selected").text()
     };
     apiClientAsync(requestUrl, requestData);
     $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);

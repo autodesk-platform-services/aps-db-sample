@@ -27,6 +27,7 @@ using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace forgeSample.Controllers
@@ -47,9 +48,10 @@ namespace forgeSample.Controllers
 		{
 			string connectionId = base.Request.Query["connectionId"];
 			string externalId = base.Request.Query["externalId"];
+			string dbProvider = base.Request.Query["dbProvider"];
 
 			//env var
-			string dbProvider = "ORACLE";
+			//string dbProvider = "ORACLE";
 
 			switch (dbProvider.ToLower())
 			{
@@ -96,9 +98,10 @@ namespace forgeSample.Controllers
 				string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
 
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-				foreach (var property in typeof(MongoTag).GetProperties())
+				foreach (string field in propFields.Split(","))
 				{
-					newRow[property.Name] = matches[0].;
+					PropertyInfo property = typeof(MongoTag).GetProperties().ToList().Find(p => p.Name == field);
+					if(property != null) newRow[field] = property.GetValue(matches[0]);
 				}
 				newRow["Status"] = "Connection Succeeded";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);

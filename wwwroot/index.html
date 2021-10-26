@@ -29,11 +29,21 @@
   <!-- Fixed navbar by Bootstrap: https://getbootstrap.com/examples/navbar-fixed-top/ -->
   <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container-fluid">
-      <ul class="nav navbar-nav left col-lg-5">
+      <ul class="nav navbar-nav left col-lg-3">
         <li>
           <a href="http://developer.autodesk.com" target="_blank">
             <img alt="Autodesk Forge" src="//developer.static.autodesk.com/images/logo_forge-2-line.png" height="20">
           </a>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav right col-lg-2">
+        <li>
+          <label for="dboptions">Choose a DB:</label>
+          <select class="alert-box" name="dboptions" id="dboptions">
+            <option value="oracle">Oracle</option>
+            <option value="mongo">Mongo</option>
+          </select>
         </li>
       </ul>
 
