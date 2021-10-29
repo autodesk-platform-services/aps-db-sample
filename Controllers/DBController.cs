@@ -42,6 +42,37 @@ namespace forgeSample.Controllers
 			GC.KeepAlive(_dbHub);
 		}
 
+		[HttpPost]
+		[Route("api/dbconnector")]
+		public object PostDBData()
+		{
+			string connectionId = base.Request.Query["connectionId"];
+			string dbProvider = base.Request.Query["dbProvider"];
+
+			switch (dbProvider.ToLower())
+			{
+				case "oracle":
+					UpdateDataFromOracleDB(connectionId);
+					break;
+				case "mongo":
+					UpdateDataFromMongoDB(connectionId);
+					break;
+				default:
+					break;
+			}
+			return new { Success = true };
+		}
+
+		private void UpdateDataFromMongoDB(string connectionId)
+		{
+			throw new NotImplementedException();
+		}
+
+		private void UpdateDataFromOracleDB(string connectionId)
+		{
+			throw new NotImplementedException();
+		}
+
 		[HttpGet]
 		[Route("api/dbconnector")]
 		public object GetDBData()

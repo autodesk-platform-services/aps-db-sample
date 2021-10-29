@@ -26,9 +26,12 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.currentText = "";
     this.currentProperty = null;
 
-    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = onPropertyClick;
+    //This is the event for property click
+    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
+    //This in the event for object selection changes
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.queryProps.bind(this));
-    //document.addEventListener('keydown', this.onKeyDown.bind(this));
+    //This is for pressing key down
+    document.addEventListener('keydown', this.onKeyDown.bind(this));
   }
 
   queryProps() {
@@ -46,17 +49,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     // add your custom properties here
     const dbids = propertySet.getDbIds();
     dbids.forEach(id => {
-      //var propsForObject = this.properties[id.toString()];
-      //if (propsForObject) {
-      //  for (const groupName in propsForObject) {
-      //    const group = propsForObject[groupName];
-      //    for (const propName in group) {
-      //      const prop = group[propName];
-      //      this.addProperty(propName, prop, groupName);
-      //    }
-      //  }
-      //}
-
       this.setdbIdProperties(id);
     });
   }
@@ -74,39 +66,46 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
   }
 
-  //onKeyDown(event) {
-  //  console.log(event);
-  //  if (!!this.currentProperty) {
-  //    switch (event.keyCode) {
-  //      case 8:
-  //        this.currentText = "";
-  //        this.updateCurrentProperty();
-  //        break;
-  //      case 13:
-  //        this.sendChanges();
-  //        break;
-  //      default:
-  //        this.currentText += event.key;
-  //        this.updateCurrentProperty();
-  //        break;
-  //    }
-  //  }
-  //  event.handled = true;
-  //}
+  onKeyDown(event) {
+    console.log(event);
+    if (!!this.currentProperty) {
+      switch (event.keyCode) {
+        case 8:
+          this.currentText = "";
+          this.updateCurrentProperty();
+          break;
+        case 13:
+          this.sendChanges();
+          break;
+        default:
+          this.currentText += event.key;
+          this.updateCurrentProperty();
+          break;
+      }
+    }
+    event.handled = true;
+  }
 
   sendChanges() {
+    const requestUrl = '/api/dbconnector';
+    const requestData = {
+      'connectionId': connection.connection.connectionId,
+      'dbProvider': $('#dboptions').find(":selected").text()
+    };
+    apiClientAsync(requestUrl, requestData);
+    $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
     alert("Changes sent to DB!");
   }
 
-  //async updateCurrentProperty() {
-  //  try {
-  //    // await this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
-  //  }
-  //  catch { }
-  //  // await this.removeProperty(this.currentProperty.name.slice(), this.currentProperty.value.slice(), this.currentProperty.category.slice());
-  //  await this.addProperty(this.currentProperty.name, this.currentText, this.currentProperty.category);
-  //  this.currentProperty.value = this.currentText;
-  //}
+  async updateCurrentProperty() {
+    try {
+      // await this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
+    }
+    catch { }
+    // await this.removeProperty(this.currentProperty.name.slice(), this.currentProperty.value.slice(), this.currentProperty.category.slice());
+    await this.addProperty(this.currentProperty.name, this.currentText, this.currentProperty.category);
+    this.currentProperty.value = this.currentText;
+  }
 
   onPropertyClick(property, event) {
     this.currentProperty = property;
@@ -126,12 +125,12 @@ async function addProperties(idsMap, externalId, properties) {
 
       }
     };
+    for (const property of Object.keys(properties)) {
+      ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
+    }
     ext.panel.setdbIdProperties(dbId);
   }
 
-  for (const property of Object.keys(properties)) {
-    ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
-  }
   $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
 }
 
