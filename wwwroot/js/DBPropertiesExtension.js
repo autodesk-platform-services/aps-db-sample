@@ -25,6 +25,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.properties = options.properties || {};
     this.currentText = "";
     this.currentProperty = null;
+    this.dbId = "";
 
     //This is the event for property click
     Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
@@ -90,27 +91,44 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     const requestUrl = '/api/dbconnector';
     const requestData = {
       'connectionId': connection.connection.connectionId,
-      'dbProvider': $('#dboptions').find(":selected").text()
+      'dbProvider': $('#dboptions').find(":selected").text(),
+      'property': this.currentProperty
     };
-    apiClientAsync(requestUrl, requestData);
+    apiClientAsync(requestUrl, requestData, 'post');
     $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
     alert("Changes sent to DB!");
   }
 
   async updateCurrentProperty() {
+    this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = this.currentText;
     try {
-      // await this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
+      this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
     }
     catch { }
-    // await this.removeProperty(this.currentProperty.name.slice(), this.currentProperty.value.slice(), this.currentProperty.category.slice());
-    await this.addProperty(this.currentProperty.name, this.currentText, this.currentProperty.category);
+    this.setdbIdProperties(this.dbId);
     this.currentProperty.value = this.currentText;
   }
 
   onPropertyClick(property, event) {
-    this.currentProperty = property;
-    this.currentText = property.value;
-    console.log("Current property changed to " + property.name + " = " + property.value);
+    this.dbId = viewer.getSelection()[0];
+    if (this.checkProperty(property)) {
+      this.currentProperty = property;
+      this.currentText = property.value;
+      console.log("Current property changed to " + property.name + " : " + property.value);
+    }
+    else {
+      console.log("This property isn't vailable!");
+    }
+  }
+
+  checkProperty(property) {
+    try {
+      //Here we check if the property selected is aquired from DB
+      return this.properties[this.dbId][property.category][property.name] == property.value;
+    }
+    catch {
+      return false;
+    }
   }
 };
 

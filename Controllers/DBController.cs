@@ -48,14 +48,15 @@ namespace forgeSample.Controllers
 		{
 			string connectionId = base.Request.Query["connectionId"];
 			string dbProvider = base.Request.Query["dbProvider"];
+			string property = base.Request.Query["property"];
 
 			switch (dbProvider.ToLower())
 			{
 				case "oracle":
-					UpdateDataFromOracleDB(connectionId);
+					UpdateDataFromOracleDB(connectionId, property);
 					break;
 				case "mongo":
-					UpdateDataFromMongoDB(connectionId);
+					UpdateDataFromMongoDB(connectionId, property);
 					break;
 				default:
 					break;
@@ -63,12 +64,29 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		private void UpdateDataFromMongoDB(string connectionId)
+		private void UpdateDataFromMongoDB(string connectionId, string property)
 		{
-			throw new NotImplementedException();
+			string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
+			string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
+			string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
+
+			try
+			{
+				BsonClassMap.RegisterClassMap<MongoTag>();
+			}
+			catch (Exception)
+			{
+
+			}
+
+			var client = new MongoClient(connectionString);
+
+			var database = client.GetDatabase(dbName);
+
+			var items = database.GetCollection<MongoTag>(collection);
 		}
 
-		private void UpdateDataFromOracleDB(string connectionId)
+		private void UpdateDataFromOracleDB(string connectionId, string property)
 		{
 			throw new NotImplementedException();
 		}
