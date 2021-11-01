@@ -22,6 +22,10 @@ connection.on("ReceiveProperties", function (externalId, properties) {
   viewer.model.getExternalIdMapping(idsMap => addProperties(idsMap, externalId, properties));
 });
 
+connection.on("ReceiveUpdate", function (externalId, updateResult) {
+  viewer.model.getExternalIdMapping(idsMap => showUpdateResult(idsMap, externalId, updateResult));
+});
+
 connection.start().then(function () {
   //No function for now
 }).catch(function (err) {

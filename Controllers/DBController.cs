@@ -44,19 +44,16 @@ namespace forgeSample.Controllers
 
 		[HttpPost]
 		[Route("api/dbconnector")]
-		public object PostDBData()
+		public object PostDBData([FromBody] DBUpdate dBUpdate)
 		{
-			string connectionId = base.Request.Query["connectionId"];
-			string dbProvider = base.Request.Query["dbProvider"];
-			string property = base.Request.Query["property"];
 
-			switch (dbProvider.ToLower())
+			switch (dBUpdate.dbProvider.ToLower())
 			{
 				case "oracle":
-					UpdateDataFromOracleDB(connectionId, property);
+					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property);
 					break;
 				case "mongo":
-					UpdateDataFromMongoDB(connectionId, property);
+					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
 					break;
 				default:
 					break;
@@ -64,29 +61,49 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		private void UpdateDataFromMongoDB(string connectionId, string property)
+		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId)
 		{
-			string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
-			string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
-			string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
+			string dbTag = await GetMappIds(externalId);
 
-			try
+			if (dbTag != "")
 			{
-				BsonClassMap.RegisterClassMap<MongoTag>();
+				string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
+				string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
+				string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
+
+				try
+				{
+					BsonClassMap.RegisterClassMap<MongoTag>();
+				}
+				catch (Exception)
+				{
+
+				}
+
+				var client = new MongoClient(connectionString);
+
+				var database = client.GetDatabase(dbName);
+
+				var items = database.GetCollection<MongoTag>(collection);
+
+				var filter = Builders<MongoTag>.Filter.Eq(doc => doc.ASSET_TAG, dbTag);
+
+				var updateDef = Builders<MongoTag>.Update.Set(doc => doc[property.name], property.value);
+
+				UpdateResult result = items.UpdateOne(filter, updateDef);
+
+				DBHub.SendUpdate(_dbHub, connectionId, externalId, result);
+				//await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+
 			}
-			catch (Exception)
+			else
 			{
 
 			}
-
-			var client = new MongoClient(connectionString);
-
-			var database = client.GetDatabase(dbName);
-
-			var items = database.GetCollection<MongoTag>(collection);
+			
 		}
 
-		private void UpdateDataFromOracleDB(string connectionId, string property)
+		public async Task UpdateDataFromOracleDB(string connectionId, Property property)
 		{
 			throw new NotImplementedException();
 		}
@@ -149,8 +166,10 @@ namespace forgeSample.Controllers
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 				foreach (string field in propFields.Split(","))
 				{
-					PropertyInfo property = typeof(MongoTag).GetProperties().ToList().Find(p => p.Name == field);
-					if(property != null) newRow[field] = property.GetValue(matches[0]);
+					//PropertyInfo property = typeof(MongoTag).GetProperties().ToList().Find(p => p.Name == field);
+					//if(property != null) newRow[field] = property.GetValue(matches[0]);
+
+					newRow[field] = matches[0][field];
 				}
 				newRow["Status"] = "Connection Succeeded";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
@@ -247,6 +266,21 @@ namespace forgeSample.Controllers
 		}
 	}
 
+	public class DBUpdate
+	{
+		public Property property { get; set; } 
+		public string connectionId { get; set; } 
+		public string dbProvider { get; set; }
+		public string externalId { get; set; }
+	}
+
+	public class Property
+	{
+		public string category { get; set; }
+		public string name { get; set; }
+		public string value { get; set; }
+	}
+
 	[BsonIgnoreExtraElements]
 	public class MapCollection
 	{
@@ -257,6 +291,27 @@ namespace forgeSample.Controllers
 	[BsonIgnoreExtraElements]
 	public class MongoTag
 	{
+		//We use this to retrieve property from srting name
+		//https://stackoverflow.com/questions/10283206/setting-getting-the-class-properties-by-string-name
+		public object this[string propertyName]
+		{
+			get
+			{
+				// probably faster without reflection:
+				// like:  return Properties.Settings.Default.PropertyValues[propertyName] 
+				// instead of the following
+				Type myType = typeof(MongoTag);
+				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
+				return myPropInfo.GetValue(this, null);
+			}
+			set
+			{
+				Type myType = typeof(MongoTag);
+				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
+				myPropInfo.SetValue(this, value, null);
+			}
+		}
+
 		public string ASSET_TAG { get; set; }
 		public string ASSET_TYPE { get; set; }
 		public string DESCRIPTION { get; set; }

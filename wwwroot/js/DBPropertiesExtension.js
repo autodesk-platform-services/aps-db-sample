@@ -35,8 +35,14 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     document.addEventListener('keydown', this.onKeyDown.bind(this));
   }
 
-  queryProps() {
-    viewer.getProperties(viewer.getSelection(), data => this.queryDB(data));
+  queryProps(method) {
+    viewer.getProperties(viewer.getSelection(), data => method == 'update' ? this.updateDB(data) : this.queryDB(data));
+  }
+
+  updateDB(data) {
+    let externalId = data.externalId;
+    externalId ? updateDBData(externalId, this.currentProperty) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    this.sendChanges(data.externalId)
   }
 
   queryDB(data) {
@@ -76,7 +82,8 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
           this.updateCurrentProperty();
           break;
         case 13:
-          this.sendChanges();
+          this.queryProps('update');
+          //this.sendChanges();
           break;
         default:
           this.currentText += event.key;
@@ -87,17 +94,18 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     event.handled = true;
   }
 
-  sendChanges() {
-    const requestUrl = '/api/dbconnector';
-    const requestData = {
-      'connectionId': connection.connection.connectionId,
-      'dbProvider': $('#dboptions').find(":selected").text(),
-      'property': this.currentProperty
-    };
-    apiClientAsync(requestUrl, requestData, 'post');
-    $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
-    alert("Changes sent to DB!");
-  }
+  //sendChanges(externalId) {
+  //  const requestUrl = '/api/dbconnector';
+  //  const requestData = {
+  //    'connectionId': connection.connection.connectionId,
+  //    'dbProvider': $('#dboptions').find(":selected").text(),
+  //    'property': this.currentProperty,
+  //    'externalId': externalId
+  //  };
+  //  apiClientAsync(requestUrl, requestData, 'post');
+  //  $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
+  //  alert("Changes sent to DB!");
+  //}
 
   async updateCurrentProperty() {
     this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = this.currentText;
@@ -132,6 +140,12 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   }
 };
 
+//Here we show the user the result about the updated parameter
+async function showUpdateResult(idsMap, externalId, updateResult) {
+  let dbId = idsMap[externalId];
+  $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
+}
+
 //Here we add the properties aquired from DB to the proper dbid proper property panel
 async function addProperties(idsMap, externalId, properties) {
   let dbId = idsMap[externalId];
@@ -150,6 +164,20 @@ async function addProperties(idsMap, externalId, properties) {
   }
 
   $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
+}
+
+//Here we reach the server endpoint to update the proper data from DB
+async function updateDBData(externalId, property) {
+  const requestUrl = '/api/dbconnector';
+  const requestData = {
+    'connectionId': connection.connection.connectionId,
+    'dbProvider': $('#dboptions').find(":selected").text(),
+    'property': property,
+    'externalId': externalId
+  };
+  apiClientAsync(requestUrl, requestData, 'post');
+  $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
+  alert("Changes sent to DB!");
 }
 
 //Here we reach the server endpoint to retrieve the proper data from DB
