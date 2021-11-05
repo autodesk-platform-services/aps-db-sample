@@ -12,6 +12,8 @@ body {
 
 #forgeViewer {
   width: 100%;
+  height: calc(100vh - 60px);
+  position: relative;
 }
 
 /* Messages for DB */
