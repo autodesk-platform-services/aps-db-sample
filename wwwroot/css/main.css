@@ -4,15 +4,15 @@ html,
 }
 
 body {
-  padding-top: 60px; /* space for the top nav bar */
-  margin-right: 30px;
+  padding-top: 56px; /* space for the top nav bar */
+  /*margin-right: 30px;*/
   /*min-height: 100%;
   height: 100%;*/
 }
 
 #forgeViewer {
   width: 100%;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 56px);
   position: relative;
 }
 
