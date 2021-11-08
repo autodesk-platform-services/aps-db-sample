@@ -29,6 +29,8 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 
     //This is the event for property click
     Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
+    //This is the event for property doubleclick
+    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.onPropertyDoubleClick;
     //This in the event for object selection changes
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.queryProps.bind(this));
     //This is for pressing key down
@@ -94,19 +96,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     event.handled = true;
   }
 
-  //sendChanges(externalId) {
-  //  const requestUrl = '/api/dbconnector';
-  //  const requestData = {
-  //    'connectionId': connection.connection.connectionId,
-  //    'dbProvider': $('#dboptions').find(":selected").text(),
-  //    'property': this.currentProperty,
-  //    'externalId': externalId
-  //  };
-  //  apiClientAsync(requestUrl, requestData, 'post');
-  //  $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
-  //  alert("Changes sent to DB!");
-  //}
-
   async updateCurrentProperty() {
     this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = this.currentText;
     try {
@@ -115,6 +104,19 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     catch { }
     this.setdbIdProperties(this.dbId);
     this.currentProperty.value = this.currentText;
+  }
+
+  onPropertyDoubleClick(property, event) {
+    this.dbId = viewer.getSelection()[0];
+    if (this.checkProperty(property)) {
+      this.currentProperty = property;
+      this.currentText = property.value;
+      console.log("Current property changed to " + property.name + " : " + property.value);
+
+    }
+    else {
+      console.log("This property isn't vailable!");
+    }
   }
 
   onPropertyClick(property, event) {

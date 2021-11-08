@@ -168,8 +168,14 @@ namespace forgeSample.Controllers
 				{
 					//PropertyInfo property = typeof(MongoTag).GetProperties().ToList().Find(p => p.Name == field);
 					//if(property != null) newRow[field] = property.GetValue(matches[0]);
+					try
+					{
+						newRow[field] = matches[0][field];
+					}
+					catch (Exception ex)
+					{
 
-					newRow[field] = matches[0][field];
+					}
 				}
 				newRow["Status"] = "Connection Succeeded";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
