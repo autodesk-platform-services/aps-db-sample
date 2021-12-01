@@ -50,7 +50,7 @@ namespace forgeSample.Controllers
 			switch (dBUpdate.dbProvider.ToLower())
 			{
 				case "oracle":
-					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property);
+					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
 					break;
 				case "mongo":
 					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
@@ -92,20 +92,50 @@ namespace forgeSample.Controllers
 
 				UpdateResult result = items.UpdateOne(filter, updateDef);
 
-				DBHub.SendUpdate(_dbHub, connectionId, externalId, result);
+				string message = (result.IsModifiedCountAvailable ? $"{result.ModifiedCount} items modified!" : "No item was modified!");
+
+				DBHub.SendUpdate(_dbHub, connectionId, externalId, result.IsModifiedCountAvailable, message);
 				//await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
 
 			}
 			else
 			{
-
+				DBHub.SendUpdate(_dbHub, connectionId, externalId, false, "Couldn't find dbTag!");
 			}
 			
 		}
 
-		public async Task UpdateDataFromOracleDB(string connectionId, Property property)
+		public async Task UpdateDataFromOracleDB(string connectionId, Property property, string externalId)
 		{
-			throw new NotImplementedException();
+			string dbTag = await GetMappIds(externalId);
+
+			//Create connection string. Check whether DBA Privilege is required.
+			string connectionString = Credentials.GetAppSetting("ORACLEDB_CON_STRING");
+
+			using OracleConnection con = new OracleConnection(connectionString);
+			using OracleCommand cmd = con.CreateCommand();
+			try
+			{
+				con.Open();
+
+				//Environment vars
+				string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
+				string tableName = Credentials.GetAppSetting("DB_TABLE_NAME");
+				string filterField = Credentials.GetAppSetting("DB_FILTER_PROPERTY");
+
+				//Modify the anonymous PL/SQL GRANT command if you wish to modify the privileges granted
+				cmd.CommandText = "update " + tableName + " set " + property.name + "= \'" + property.value + "\' where " + filterField + "= \'" + dbTag + "\'";
+				int result = cmd.ExecuteNonQuery();
+
+				DBHub.SendUpdate(_dbHub, connectionId, externalId, true, $"{result} rows affected!");
+				//cmd.Parameters.AddWithValue("param1", 1);
+				//cmd.Parameters.AddWithValue("param2", "Text data");
+				//cmd.Parameters.AddWithValue("keyValue", "1");
+			}
+			catch (Exception ex)
+			{
+				DBHub.SendUpdate(_dbHub, connectionId, externalId, false, ex.Message);
+			}
 		}
 
 		[HttpGet]

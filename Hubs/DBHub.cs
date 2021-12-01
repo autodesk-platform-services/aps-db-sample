@@ -14,9 +14,9 @@ namespace forge_viewer_db_properties.Hubs
 			await hub.Clients.Client(connectionId).SendAsync("ReceiveProperties", externalId, properties);
 		}
 
-		public async static Task SendUpdate(IHubContext<DBHub> hub, string connectionId, string externalId, UpdateResult updateResult)
+		public async static Task SendUpdate(IHubContext<DBHub> hub, string connectionId, string externalId, bool updateResult, string message)
 		{
-			await hub.Clients.Client(connectionId).SendAsync("ReceiveUpdate", externalId);
+			await hub.Clients.Client(connectionId).SendAsync("ReceiveUpdate", externalId, updateResult, message);
 		}
 	}
 }

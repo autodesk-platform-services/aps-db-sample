@@ -44,7 +44,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   updateDB(data) {
     let externalId = data.externalId;
     externalId ? updateDBData(externalId, this.currentProperty) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
-    this.sendChanges(data.externalId)
+    //this.sendChanges(data.externalId)
   }
 
   queryDB(data) {
@@ -87,6 +87,8 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
           this.queryProps('update');
           //this.sendChanges();
           break;
+        case 16:
+          break;
         default:
           this.currentText += event.key;
           this.updateCurrentProperty();
@@ -112,7 +114,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
       this.currentProperty = property;
       this.currentText = property.value;
       console.log("Current property changed to " + property.name + " : " + property.value);
-
+      this.highlightElement(property);
     }
     else {
       console.log("This property isn't vailable!");
@@ -145,7 +147,9 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 //Here we show the user the result about the updated parameter
 async function showUpdateResult(idsMap, externalId, updateResult) {
   let dbId = idsMap[externalId];
-  $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
+  //viewer.isolate(dbId);
+  let selector = (updateResult ? "div.ready" : "div.failure")
+  $(selector).fadeIn(500).delay(2000).fadeOut(500);
 }
 
 //Here we add the properties aquired from DB to the proper dbid proper property panel
@@ -153,17 +157,16 @@ async function addProperties(idsMap, externalId, properties) {
   let dbId = idsMap[externalId];
   let ext = viewer.getExtension('DBPropertiesExtension');
 
-  if (!ext.panel.properties[dbId]) {
-    ext.panel.properties[dbId] = {
-      "Properties From DB": {
+  ext.panel.properties[dbId] = {
+    "Properties From DB": {
 
-      }
-    };
-    for (const property of Object.keys(properties)) {
-      ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
     }
-    ext.panel.setdbIdProperties(dbId);
+  };
+  for (const property of Object.keys(properties)) {
+
+    ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
   }
+  ext.panel.setdbIdProperties(dbId);
 
   $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
 }
