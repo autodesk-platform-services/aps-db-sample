@@ -43,13 +43,17 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 
   updateDB(data) {
     let externalId = data.externalId;
-    externalId ? updateDBData(externalId, this.currentProperty) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    let projectId = selectedNode.projectId;
+    let itemId = selectedNode.itemId;
+    externalId ? updateDBData(externalId, this.currentProperty, projectId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
     //this.sendChanges(data.externalId)
   }
 
   queryDB(data) {
     let externalId = data.externalId;
-    externalId ? extractDBData(externalId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    let projectId = selectedNode.projectId;
+    let itemId = selectedNode.itemId;
+    externalId ? extractDBData(externalId, projectId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
   }
 
   setAggregatedProperties(propertySet) {
@@ -172,13 +176,15 @@ async function addProperties(idsMap, externalId, properties) {
 }
 
 //Here we reach the server endpoint to update the proper data from DB
-async function updateDBData(externalId, property) {
+async function updateDBData(externalId, property, projectId, itemId) {
   const requestUrl = '/api/dbconnector';
   const requestData = {
     'connectionId': connection.connection.connectionId,
     'dbProvider': $('#dboptions').find(":selected").text(),
     'property': property,
-    'externalId': externalId
+    'externalId': externalId,
+    'projectId': projectId,
+    'itemId': itemId
   };
   apiClientAsync(requestUrl, requestData, 'post');
   $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
@@ -186,12 +192,14 @@ async function updateDBData(externalId, property) {
 }
 
 //Here we reach the server endpoint to retrieve the proper data from DB
-async function extractDBData(externalId) {
+async function extractDBData(externalId, projectId, itemId) {
   try {
     const requestUrl = '/api/dbconnector';
     const requestData = {
       'connectionId': connection.connection.connectionId,
       'externalId': externalId,
+      'projectId': projectId,
+      'itemId': itemId,
       'dbProvider': $('#dboptions').find(":selected").text()
     };
     apiClientAsync(requestUrl, requestData);

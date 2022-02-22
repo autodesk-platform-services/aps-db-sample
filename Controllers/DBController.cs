@@ -53,7 +53,7 @@ namespace forgeSample.Controllers
 					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
 					break;
 				case "mongo":
-					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
+					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId, dBUpdate.projectId, dBUpdate.itemId);
 					break;
 				default:
 					break;
@@ -61,56 +61,47 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId)
+		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId, string projectId, string itemiD)
 		{
-			string dbTag = await GetMappIds(externalId);
+			string connectionString = GetAppSetting("MONGODB_CON_STRING");
+			string dbName = GetAppSetting("MONGODG_DBNAME");
+			string collection = GetAppSetting("MONGODB_COLLECTION");
 
-			if (dbTag != "")
+			try
 			{
-				string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
-				string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
-				string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
-
-				try
-				{
-					BsonClassMap.RegisterClassMap<MongoTag>();
-				}
-				catch (Exception)
-				{
-
-				}
-
-				var client = new MongoClient(connectionString);
-
-				var database = client.GetDatabase(dbName);
-
-				var items = database.GetCollection<MongoTag>(collection);
-
-				var filter = Builders<MongoTag>.Filter.Eq(doc => doc.ASSET_TAG, dbTag);
-
-				var updateDef = Builders<MongoTag>.Update.Set(doc => doc[property.name], property.value);
-
-				UpdateResult result = items.UpdateOne(filter, updateDef);
-
-				string message = (result.IsModifiedCountAvailable ? $"{result.ModifiedCount} items modified!" : "No item was modified!");
-
-				DBHub.SendUpdate(_dbHub, connectionId, externalId, result.IsModifiedCountAvailable, message);
-				//await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+				BsonClassMap.RegisterClassMap<MongoItem>();
+			}
+			catch (Exception)
+			{
 
 			}
-			else
-			{
-				DBHub.SendUpdate(_dbHub, connectionId, externalId, false, "Couldn't find dbTag!");
-			}
-			
+
+			var client = new MongoClient(connectionString);
+
+			var database = client.GetDatabase(dbName);
+
+			var items = database.GetCollection<MongoItem>(collection);
+
+			var builder = Builders<MongoItem>.Filter;
+
+			var filter = builder.Eq(doc => doc.ExternalId, externalId) & builder.Eq(doc => doc.ProjectId, projectId) & builder.Eq(doc => doc.ItemId, itemiD);
+
+			var updateDef = Builders<MongoItem>.Update.Set(doc => doc[property.name], property.value);
+
+			UpdateResult result = items.UpdateOne(filter, updateDef);
+
+			string message = (result.IsModifiedCountAvailable ? $"{result.ModifiedCount} items modified!" : "No item was modified!");
+
+			DBHub.SendUpdate(_dbHub, connectionId, externalId, result.IsModifiedCountAvailable, message);
+
 		}
 
 		public async Task UpdateDataFromOracleDB(string connectionId, Property property, string externalId)
 		{
-			string dbTag = await GetMappIds(externalId);
+			//string dbTag = await GetMappIds(externalId);
 
 			//Create connection string. Check whether DBA Privilege is required.
-			string connectionString = Credentials.GetAppSetting("ORACLEDB_CON_STRING");
+			string connectionString = GetAppSetting("ORACLEDB_CON_STRING");
 
 			using OracleConnection con = new OracleConnection(connectionString);
 			using OracleCommand cmd = con.CreateCommand();
@@ -119,12 +110,12 @@ namespace forgeSample.Controllers
 				con.Open();
 
 				//Environment vars
-				string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
-				string tableName = Credentials.GetAppSetting("DB_TABLE_NAME");
-				string filterField = Credentials.GetAppSetting("DB_FILTER_PROPERTY");
+				string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
+				string tableName = GetAppSetting("DB_TABLE_NAME");
+				string filterField = GetAppSetting("DB_FILTER_PROPERTY");
 
 				//Modify the anonymous PL/SQL GRANT command if you wish to modify the privileges granted
-				cmd.CommandText = "update " + tableName + " set " + property.name + "= \'" + property.value + "\' where " + filterField + "= \'" + dbTag + "\'";
+				cmd.CommandText = "update " + tableName + " set " + property.name + "= \'" + property.value + "\' where " + filterField + "= \'" + externalId + "\'";
 				int result = cmd.ExecuteNonQuery();
 
 				DBHub.SendUpdate(_dbHub, connectionId, externalId, true, $"{result} rows affected!");
@@ -145,6 +136,8 @@ namespace forgeSample.Controllers
 			string connectionId = base.Request.Query["connectionId"];
 			string externalId = base.Request.Query["externalId"];
 			string dbProvider = base.Request.Query["dbProvider"];
+			string projectId = base.Request.Query["projectId"];
+			string itemId = base.Request.Query["itemId"];
 
 			//env var
 			//string dbProvider = "ORACLE";
@@ -152,10 +145,10 @@ namespace forgeSample.Controllers
 			switch (dbProvider.ToLower())
 			{
 				case "oracle":
-					ExtractDataFromOracleDB(connectionId, externalId);
+					ExtractDataFromOracleDB(connectionId, externalId, projectId, itemId);
 					break;
 				case "mongo":
-					ExtractDataFromMongoDB(connectionId, externalId);
+					ExtractDataFromMongoDB(connectionId, externalId, projectId, itemId);
 					break;
 				default:
 					break;
@@ -164,34 +157,34 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		public async Task ExtractDataFromMongoDB( string connectionId, string externalId)
+		public async Task ExtractDataFromMongoDB( string connectionId, string externalId, string projectId, string itemId)
 		{
-			string dbTag = await GetMappIds(externalId);
+			//string dbTag = await GetMappIds(externalId);
 
-			if (dbTag != "")
+			string connectionString = GetAppSetting("MONGODB_CON_STRING");
+			string dbName = GetAppSetting("MONGODG_DBNAME");
+			string collectionName = GetAppSetting("MONGODB_COLLECTION");
+
+			try
 			{
-				string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
-				string dbName = Credentials.GetAppSetting("MONGODG_ASSET_DBNAME");
-				string collection = Credentials.GetAppSetting("MONGODB_ASSET_COLLECTION");
+				BsonClassMap.RegisterClassMap<MongoItem>();
+			}
+			catch (Exception)
+			{
 
-				try
-				{
-					BsonClassMap.RegisterClassMap<MongoTag>();
-				}
-				catch (Exception)
-				{
+			}
 
-				}
+			var client = new MongoClient(connectionString);
 
-				var client = new MongoClient(connectionString);
+			var database = client.GetDatabase(dbName);
 
-				var database = client.GetDatabase(dbName);
+			var collection = database.GetCollection<MongoItem>(collectionName);
 
-				var items = database.GetCollection<MongoTag>(collection);
+			List<MongoItem> matches = collection.Find(map => map.ExternalId == externalId && map.ProjectId == projectId && map.ItemId == itemId).ToList();
 
-				List<MongoTag> matches = items.Find(asset => asset.ASSET_TAG == dbTag).ToList();
-
-				string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
+			if(matches.Count > 0)
+            {
+				string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
 
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 				foreach (string field in propFields.Split(","))
@@ -207,27 +200,71 @@ namespace forgeSample.Controllers
 
 					}
 				}
-				newRow["Status"] = "Connection Succeeded";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
-
 			}
-			else
-			{
+            else
+            {
+				MongoItem newItem = new MongoItem()
+				{
+					ExternalId = externalId,
+					ProjectId = projectId,
+					ItemId = itemId
+				};
+				await CreateNewItemFromMongo(newItem, collection);
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-				newRow["Status"] = "Connection Succeeded";
-				newRow["ASSET_TAG"] = "not found!";
+				newRow["Material"] = "";
+				newRow["Supplier"] = "";
+				newRow["Price"] = "";
+				newRow["Currency"] = "";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
 			}
+
 		}
 
-		public async Task ExtractDataFromOracleDB(string connectionId, string externalId)
-		{
-			string dbTag = await GetMappIds(externalId);
+        public async Task CreateNewItemFromMongo(MongoItem newItem, dynamic collection)
+        {
+			//string connectionString = GetAppSetting("MONGODB_CON_STRING");
+			//string dbName = GetAppSetting("MONGODG_ASSET_DBNAME");
+			//string collection = GetAppSetting("MONGODB_ASSET_COLLECTION");
 
-			if (dbTag != "")
+			//try
+			//{
+			//	BsonClassMap.RegisterClassMap<MongoItem>();
+			//}
+			//catch (Exception)
+			//{
+
+			//}
+
+			//var client = new MongoClient(connectionString);
+
+			//var database = client.GetDatabase(dbName);
+
+			//var items = database.GetCollection<MongoItem>(collection);
+
+			string message = "";
+
+            try
+            {
+				collection.InsertOne(newItem);
+				message = "New item successfully inserted!";
+			}
+			catch(Exception ex)
+            {
+				message = "Error inserting new item: ex.Message";
+            }
+
+            Console.WriteLine(message);
+		}
+
+        public async Task ExtractDataFromOracleDB(string connectionId, string externalId, string projectId, string itemId)
+		{
+			//string dbTag = await GetMappIds(externalId);
+
+			if (true)
 			{
 				//Create connection string. Check whether DBA Privilege is required.
-				string connectionString = Credentials.GetAppSetting("ORACLEDB_CON_STRING");
+				string connectionString = GetAppSetting("ORACLEDB_CON_STRING");
 				
 				using OracleConnection con = new OracleConnection(connectionString);
 				using OracleCommand cmd = con.CreateCommand();
@@ -236,12 +273,12 @@ namespace forgeSample.Controllers
 					con.Open();
 
 					//Environment vars
-					string propFields = Credentials.GetAppSetting("DB_PROPERTIES_NAMES");
-					string tableName = Credentials.GetAppSetting("DB_TABLE_NAME");
-					string filterField = Credentials.GetAppSetting("DB_FILTER_PROPERTY");
+					string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
+					string tableName = GetAppSetting("DB_TABLE_NAME");
+					string filterField = GetAppSetting("DB_FILTER_PROPERTY");
 
 					//Modify the anonymous PL/SQL GRANT command if you wish to modify the privileges granted
-					cmd.CommandText = "select " + propFields + " from " + tableName + " where " + filterField + "= \'" + dbTag + "\'";
+					cmd.CommandText = "select " + propFields + " from " + tableName + " where " + filterField + "= \'" + externalId + "\'";
 					OracleDataReader reader = cmd.ExecuteReader();
 					while (reader.Read())
 					{
@@ -265,41 +302,31 @@ namespace forgeSample.Controllers
 			}
 			else
 			{
+				MongoItem newItem = new MongoItem()
+				{
+					ExternalId = externalId,
+					ProjectId = projectId,
+					ItemId = itemId
+				};
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-				newRow["Status"] = "Connection Succeeded";
+				newRow["Material"] = "";
+				newRow["Supplier"] = "";
+				newRow["Price"] = "";
+				newRow["Currency"] = "";
+				newRow["ASSET_TAG"] = "not found!";
 				newRow["ASSET_TAG"] = "not found!";
 				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
 			}
 		}
 
-		public async Task<string> GetMappIds(string externalId)
+        /// <summary>
+        /// Reads appsettings from web.config
+        /// </summary>
+        private string GetAppSetting(string settingKey)
 		{
-			//env vars
-			string connectionString = Credentials.GetAppSetting("MONGODB_CON_STRING");
-			string dbName = Credentials.GetAppSetting("MONGODG_MAP_DBNAME");
-			string collection = Credentials.GetAppSetting("MONGODB_MAP_COLLECTION");
-
-			try
-			{
-				BsonClassMap.RegisterClassMap<MapCollection>();
-			}
-			catch (Exception)
-			{
-
-			}
-			
-			var client = new MongoClient(connectionString);
-
-			var database = client.GetDatabase(dbName);
-
-			var items = database.GetCollection<MapCollection>(collection);
-
-			List<MapCollection> matches = items.Find(map => map.externalId == externalId).ToList();
-
-			List<string> tags = matches.Select(o => o.dbTag).ToList();
-
-			return (tags.Count > 0 ? tags[0] : "" );
+			return Environment.GetEnvironmentVariable(settingKey);
 		}
+
 	}
 
 	public class DBUpdate
@@ -308,6 +335,8 @@ namespace forgeSample.Controllers
 		public string connectionId { get; set; } 
 		public string dbProvider { get; set; }
 		public string externalId { get; set; }
+		public string projectId { get; set; }
+		public string itemId { get; set; }
 	}
 
 	public class Property
@@ -318,14 +347,7 @@ namespace forgeSample.Controllers
 	}
 
 	[BsonIgnoreExtraElements]
-	public class MapCollection
-	{
-		public string dbTag { get; set; }
-		public string externalId { get; set; }
-	}
-
-	[BsonIgnoreExtraElements]
-	public class MongoTag
+	public class MongoItem
 	{
 		//We use this to retrieve property from srting name
 		//https://stackoverflow.com/questions/10283206/setting-getting-the-class-properties-by-string-name
@@ -336,21 +358,24 @@ namespace forgeSample.Controllers
 				// probably faster without reflection:
 				// like:  return Properties.Settings.Default.PropertyValues[propertyName] 
 				// instead of the following
-				Type myType = typeof(MongoTag);
+				Type myType = typeof(MongoItem);
 				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
 				return myPropInfo.GetValue(this, null);
 			}
 			set
 			{
-				Type myType = typeof(MongoTag);
+				Type myType = typeof(MongoItem);
 				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
 				myPropInfo.SetValue(this, value, null);
 			}
 		}
 
-		public string ASSET_TAG { get; set; }
-		public string ASSET_TYPE { get; set; }
-		public string DESCRIPTION { get; set; }
-		public int TAG_NUMBER { get; set; }
+		public string Material { get; set; }
+		public string Supplier { get; set; }
+		public string Price { get; set; }
+		public string Currency { get; set; }
+		public string ExternalId { get; set; }
+		public string ProjectId { get; set; }
+		public string ItemId { get; set; }
 	}
 }

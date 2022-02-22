@@ -20,10 +20,7 @@ var viewer;
 
 // @urn the model to show
 // @viewablesId which viewables to show, applies to BIM 360 Plans folder
-function launchViewer() {
-
-  let urn = 'dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLnJXcXpQamYwUnlpNDliNE9HZFdFRmc_dmVyc2lvbj0x';
-
+function launchViewer(urn, viewableId) {
   var options = {
     env: 'AutodeskProduction',
     getAccessToken: getForgeToken,
@@ -31,26 +28,41 @@ function launchViewer() {
   };
 
   Autodesk.Viewing.Initializer(options, () => {
-
+    document.getElementById('forgeViewer').innerHTML = "";
     viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'));
     viewer.start();
     var documentId = 'urn:' + urn;
     viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }) );
     Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);
   });
+}
 
-  function onDocumentLoadSuccess(doc) {
-    // if a viewableId was specified, load that view, otherwise the default view
-    //var viewables = (viewableId ? doc.getRoot().findByGuid(viewableId) : doc.getRoot().getDefaultGeometry());
-    var viewables = doc.getRoot().getDefaultGeometry();
-    viewer.loadDocumentNode(doc, viewables).then(i => {
-      // any additional action here?
-    });
-  }
+function launchOSSViewer(urn) {
+  var options = {
+    env: 'AutodeskProduction',
+    getAccessToken: getForgeOSSToken
+  };
 
-  function onDocumentLoadFailure(viewerErrorCode) {
-    console.error('onDocumentLoadFailure() - errorCode:' + viewerErrorCode);
-  }
+  Autodesk.Viewing.Initializer(options, () => {
+    document.getElementById('forgeViewer').innerHTML = "";
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'));
+    viewer.start();
+    var documentId = 'urn:' + urn;
+    viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }));
+    Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);
+  });
+}
+
+function onDocumentLoadSuccess(doc) {
+  // if a viewableId was specified, load that view, otherwise the default view
+  var viewables = doc.getRoot().getDefaultGeometry();
+  viewer.loadDocumentNode(doc, viewables).then(i => {
+    // any additional action here?
+  });
+}
+
+function onDocumentLoadFailure(viewerErrorCode) {
+  console.error('onDocumentLoadFailure() - errorCode:' + viewerErrorCode);
 }
 
 function download(content, fileName, contentType) {
@@ -63,6 +75,14 @@ function download(content, fileName, contentType) {
 
 function getForgeToken(callback) {
   fetch('/api/forge/oauth/token').then(res => {
+    res.json().then(data => {
+      callback(data.access_token, data.expires_in);
+    });
+  });
+}
+
+function getForgeOSSToken(callback) {
+  fetch('/api/forge/oauth/oss/token').then(res => {
     res.json().then(data => {
       callback(data.access_token, data.expires_in);
     });

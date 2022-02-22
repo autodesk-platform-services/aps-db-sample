@@ -5,7 +5,8 @@
   <title>Autodesk Forge Tutorial</title>
   <meta charset="utf-8" />
   <link rel="shortcut icon" href="https://github.com/Autodesk-Forge/learn.forge.viewhubmodels/raw/master/img/favicon.ico">
-  <!-- Common packages: jQuery, Bootstrap, jsTree -->
+  <!-- Common packages: jQuery, Bootstrap, jsTree, sweetalert2 -->
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.7/jstree.min.js"></script>
@@ -16,8 +17,8 @@
   <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
   <!-- this project files -->
   <link href="css/main.css" rel="stylesheet" />
-  <script src="js/ForgeTree.js"></script>
   <script src="js/ForgeViewer.js"></script>
+  <script src="js/ForgeTree.js"></script>
   <!--DB Connector-->
   <script src="js/DBPropertiesExtension.js"></script>
   <!--signalr-->
@@ -41,7 +42,7 @@
         <li>
           <label for="dboptions">Choose a DB:</label>
           <select class="alert-box" name="dboptions" id="dboptions">
-            <option value="oracle">Oracle</option>
+            <!--<option value="oracle">Oracle</option>-->
             <option value="mongo">Mongo</option>
           </select>
         </li>
@@ -57,47 +58,80 @@
         </li>
       </ul>
 
-      <ul class="nav navbar-nav right col-lg-3">
-        <li>
-          <div style="float: right; margin-top: 15px;">
-            <span style="padding-right: 5px;" data-toggle="modal" data-target="#provisionAccountModal"
-                  title="Enable my ACC Account">
-              <span class="glyphicon glyphicon-cog glyphiconTop mlink"> </span> Enable
-              my BIM 360/ACC Account
-            </span>
-          </div>
-        </li>
-      </ul>
-
-      <ul class="nav navbar-nav right col-lg-2">
-        <div style="padding-top: 10px; text-align: right;">
-          <li>
-            <button class="btn btn-sm btn-default" id="autodeskSignOutButton" hidden>
-              Sign Out &nbsp&nbsp<span id="userInfo"></span>
-            </button>
-          </li>
-        </div>
-        </ul>
     </div>
   </nav>
   <!-- End of navbar -->
   <div class="container-fluid fill">
     <div class="row fill">
-      <div style="padding-top: 100px; text-align: center;" id="signInDiv">
-        <button class="btn btn-lg btn-default" id="autodeskSigninButton">
-          <img src="https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/autodesk_text.png"
-               height="20"> Sign in
-        </button>
-        <br />
-        <br />
-        <br /> You may also need to provision your<br /> BIM 360 Docs account for this app.<br />
-        <a href="https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps">Learn more</a>.
+      <div class="col-sm-4 fill">
+        <div class="panel panel-default fill">
+          <div class="row container-fluid">
+            <div class="panel-heading" data-toggle="tooltip">
+              Sample files
+            </div>
+            <div id="samples">
+            </div>
+          </div>
+          <div class="row container-fluid">
+            <div class="panel-heading" data-toggle="tooltip" style="padding: 0px;">
+              <span id="userInfo"></span>
+              <span id="refreshHubs" class="glyphicon glyphicon-refresh" style="cursor: pointer; display: none" title="Refresh list of files"></span>
+              <span id="signOut" class="glyphicon glyphicon-log-out" style="margin-top:5px;cursor: pointer; float: right; display: none" title="Sign out"> </span>
+            </div>
+            <div id="userHubs">
+              <div style="padding-top: 100px; text-align: center;">
+                <button class="btn btn-lg btn-default" id="autodeskSigninButton">
+                  <img src="https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/autodesk_text.png"
+                       height="20"> Sign in
+                </button>
+                <br />
+                <br />
+                <br /> You may also need to provision your<br /> BIM 360/ACC Docs account for this app.<br />
+                <a href="https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps">Learn more</a>.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="fill">
+      <div class="col-sm-8 fill">
         <div id="forgeViewer"></div>
       </div>
     </div>
   </div>
 </body>
 <iframe id="hiddenFrame" style="visibility: hidden; display: none" />
+<!--<script>
+  let tokenurl = 'https://l15xenb90a.execute-api.us-east-1.amazonaws.com/default/GetToken';
+
+  window.onload = async () => {
+    await fetch(tokenurl).then(function (response) {
+      return response.json();
+    }).then(function (token) {
+
+      let urn = 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6anBvbWRic2FtcGxlYnVja2V0L3JhY2Jhc2ljc2FtcGxlcHJvamVjdC5ydnQ=';
+
+      const options = {
+        env: 'AutodeskProduction',
+        accessToken: token
+      };
+
+      Autodesk.Viewing.Initializer(options, () => {
+
+        const div = document.getElementById('forgeViewer');
+
+        const config = {};
+
+        viewer = new Autodesk.Viewing.Private.GuiViewer3D(div, config);
+        viewer.start();
+        viewer.setTheme("light-theme");
+        viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }));
+        Autodesk.Viewing.Document.load(`urn:${urn}`, doc => {
+          var viewables = doc.getRoot().getDefaultGeometry();
+          viewer.loadDocumentNode(doc, viewables);
+        });
+      });
+    });
+  }
+</script>-->
+
 </html>
