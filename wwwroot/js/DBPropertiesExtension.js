@@ -23,18 +23,16 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   constructor(viewer, options) {
     super(viewer, options);
     this.properties = options.properties || {};
-    this.currentText = "";
+    //this.currentText = "";
     this.currentProperty = null;
     this.dbId = "";
 
     //This is the event for property click
-    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
+    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
     //This is the event for property doubleclick
-    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.onPropertyDoubleClick;
+    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.onPropertyDoubleClick;
     //This in the event for object selection changes
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.queryProps.bind(this));
-    //This is for pressing key down
-    document.addEventListener('keydown', this.onKeyDown.bind(this));
   }
 
   queryProps(method) {
@@ -79,63 +77,56 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
   }
 
-  onKeyDown(event) {
-    console.log(event);
-    if (!!this.currentProperty) {
-      switch (event.keyCode) {
-        case 8:
-          this.currentText = "";
-          this.updateCurrentProperty();
-          break;
-        case 13:
-          this.queryProps('update');
-          //this.sendChanges();
-          break;
-        case 16:
-          break;
-        default:
-          this.currentText += event.key;
-          this.updateCurrentProperty();
-          break;
-      }
-    }
-    event.handled = true;
-  }
-
-  async updateCurrentProperty() {
-    this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = this.currentText;
+  async updateCurrentProperty(newValue) {
+    this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = newValue;
     try {
       this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
     }
     catch { }
     this.setdbIdProperties(this.dbId);
-    this.currentProperty.value = this.currentText;
+    this.currentProperty.value = newValue;
   }
 
   onPropertyDoubleClick(property, event) {
     this.dbId = viewer.getSelection()[0];
     if (this.checkProperty(property)) {
       this.currentProperty = property;
-      this.currentText = property.value;
-      console.log("Current property changed to " + property.name + " : " + property.value);
-      this.highlightElement(property);
+      Swal.fire({
+        title: `Type the new value for the property ${property.name}`,
+        input: 'text',
+        inputValue: property.value,
+        inputAttributes: {
+          autocapitalize: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Update DB',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.updateCurrentProperty(result.value);
+          this.queryProps('update');
+          console.log("Current property changed to " + property.name + " : " + property.value);
+        }
+      })
+      
     }
     else {
       console.log("This property isn't vailable!");
     }
   }
 
-  onPropertyClick(property, event) {
-    this.dbId = viewer.getSelection()[0];
-    if (this.checkProperty(property)) {
-      this.currentProperty = property;
-      this.currentText = property.value;
-      console.log("Current property changed to " + property.name + " : " + property.value);
-    }
-    else {
-      console.log("This property isn't vailable!");
-    }
-  }
+  //onPropertyClick(property, event) {
+  //  this.dbId = viewer.getSelection()[0];
+  //  if (this.checkProperty(property)) {
+  //    this.currentProperty = property;
+  //    this.currentText = property.value;
+  //    console.log("Current property changed to " + property.name + " : " + property.value);
+  //  }
+  //  else {
+  //    console.log("This property isn't vailable!");
+  //  }
+  //}
 
   checkProperty(property) {
     try {

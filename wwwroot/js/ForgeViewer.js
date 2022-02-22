@@ -29,7 +29,7 @@ function launchViewer(urn, viewableId) {
 
   Autodesk.Viewing.Initializer(options, () => {
     document.getElementById('forgeViewer').innerHTML = "";
-    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'));
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['Autodesk.DocumentBrowser'] });
     viewer.start();
     var documentId = 'urn:' + urn;
     viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }) );
@@ -45,7 +45,7 @@ function launchOSSViewer(urn) {
 
   Autodesk.Viewing.Initializer(options, () => {
     document.getElementById('forgeViewer').innerHTML = "";
-    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'));
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'), { extensions: ['Autodesk.DocumentBrowser'] });
     viewer.start();
     var documentId = 'urn:' + urn;
     viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }));

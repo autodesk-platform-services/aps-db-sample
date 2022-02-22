@@ -119,9 +119,6 @@ namespace forgeSample.Controllers
 				int result = cmd.ExecuteNonQuery();
 
 				DBHub.SendUpdate(_dbHub, connectionId, externalId, true, $"{result} rows affected!");
-				//cmd.Parameters.AddWithValue("param1", 1);
-				//cmd.Parameters.AddWithValue("param2", "Text data");
-				//cmd.Parameters.AddWithValue("keyValue", "1");
 			}
 			catch (Exception ex)
 			{
@@ -189,8 +186,6 @@ namespace forgeSample.Controllers
 				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 				foreach (string field in propFields.Split(","))
 				{
-					//PropertyInfo property = typeof(MongoTag).GetProperties().ToList().Find(p => p.Name == field);
-					//if(property != null) newRow[field] = property.GetValue(matches[0]);
 					try
 					{
 						newRow[field] = matches[0][field];
@@ -223,25 +218,6 @@ namespace forgeSample.Controllers
 
         public async Task CreateNewItemFromMongo(MongoItem newItem, dynamic collection)
         {
-			//string connectionString = GetAppSetting("MONGODB_CON_STRING");
-			//string dbName = GetAppSetting("MONGODG_ASSET_DBNAME");
-			//string collection = GetAppSetting("MONGODB_ASSET_COLLECTION");
-
-			//try
-			//{
-			//	BsonClassMap.RegisterClassMap<MongoItem>();
-			//}
-			//catch (Exception)
-			//{
-
-			//}
-
-			//var client = new MongoClient(connectionString);
-
-			//var database = client.GetDatabase(dbName);
-
-			//var items = database.GetCollection<MongoItem>(collection);
-
 			string message = "";
 
             try

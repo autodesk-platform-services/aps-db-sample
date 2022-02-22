@@ -105,13 +105,13 @@ function prepareUserHubsTree() {
     }).bind("activate_node.jstree", function (evt, data) {
         if (data != null && data.node != null && (data.node.type == 'versions' || data.node.type == 'bim360documents')) {
             // in case the node.id contains a | then split into URN & viewableId
+            selectedNode = {
+              projectId: data.node.parent.split('/')[6],
+              itemId: data.node.parent.split('/')[8]
+            };
             if (data.node.id.indexOf('|') > -1) {
               var urn = data.node.id.split('|')[1];
               var viewableId = data.node.id.split('|')[2];
-              selectedNode = selectedNode = {
-                projectId: data.node.parent.split('/')[6],
-                itemId: data.node.parent.split('/')[8]
-              };
               launchViewer(urn, viewableId);
             }
             else {
