@@ -84,6 +84,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
     catch { }
     this.setdbIdProperties(this.dbId);
+    //this.currentProperty.value = '"<input type="text">"';
     this.currentProperty.value = newValue;
   }
 

@@ -19,6 +19,7 @@
 using forge_viewer_db_properties.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
@@ -61,44 +62,48 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId, string projectId, string itemiD)
+		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId, string projectId, string itemId)
 		{
 			string connectionString = GetAppSetting("MONGODB_CON_STRING");
 			string dbName = GetAppSetting("MONGODG_DBNAME");
-			string collection = GetAppSetting("MONGODB_COLLECTION");
-
-			try
-			{
-				BsonClassMap.RegisterClassMap<MongoItem>();
-			}
-			catch (Exception)
-			{
-
-			}
+			string collectionName = GetAppSetting("MONGODB_COLLECTION");
 
 			var client = new MongoClient(connectionString);
 
 			var database = client.GetDatabase(dbName);
 
-			var items = database.GetCollection<MongoItem>(collection);
+			var collection = database.GetCollection<BsonDocument>(collectionName);
 
-			var builder = Builders<MongoItem>.Filter;
+			string id = GetIdFromProps(projectId, externalId, itemId);
 
-			var filter = builder.Eq(doc => doc.ExternalId, externalId) & builder.Eq(doc => doc.ProjectId, projectId) & builder.Eq(doc => doc.ItemId, itemiD);
+			var filter = new BsonDocument { { "_id", id } };
 
-			var updateDef = Builders<MongoItem>.Update.Set(doc => doc[property.name], property.value);
+			var updateDef = Builders<BsonDocument>.Update.Set(doc => doc[property.name], property.value);
 
-			UpdateResult result = items.UpdateOne(filter, updateDef);
+			UpdateResult updateResult = collection.UpdateOne(filter, updateDef);
 
-			string message = (result.IsModifiedCountAvailable ? $"{result.ModifiedCount} items modified!" : "No item was modified!");
+			bool createResult = false;
 
-			DBHub.SendUpdate(_dbHub, connectionId, externalId, result.IsModifiedCountAvailable, message);
+			if (updateResult.MatchedCount == 0)
+            {
+                createResult = await CreateNewItemFromMongo(collection, id, property);
+            }
+
+			string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} items modified!" : "No item was modified!");
+
+			DBHub.SendUpdate(_dbHub, connectionId, externalId, updateResult.IsModifiedCountAvailable, message);
 
 		}
 
-		public async Task UpdateDataFromOracleDB(string connectionId, Property property, string externalId)
+		//Through this function we obtain the id used by mONGOdb BASED on our model
+        public string GetIdFromProps(string projectId, string externalId, string itemId)
+        {
+			return $"{projectId}_{itemId}_{externalId}";
+
+		}
+
+        public async Task UpdateDataFromOracleDB(string connectionId, Property property, string externalId)
 		{
-			//string dbTag = await GetMappIds(externalId);
 
 			//Create connection string. Check whether DBA Privilege is required.
 			string connectionString = GetAppSetting("ORACLEDB_CON_STRING");
@@ -136,8 +141,6 @@ namespace forgeSample.Controllers
 			string projectId = base.Request.Query["projectId"];
 			string itemId = base.Request.Query["itemId"];
 
-			//env var
-			//string dbProvider = "ORACLE";
 
 			switch (dbProvider.ToLower())
 			{
@@ -156,81 +159,79 @@ namespace forgeSample.Controllers
 
 		public async Task ExtractDataFromMongoDB( string connectionId, string externalId, string projectId, string itemId)
 		{
-			//string dbTag = await GetMappIds(externalId);
 
 			string connectionString = GetAppSetting("MONGODB_CON_STRING");
 			string dbName = GetAppSetting("MONGODG_DBNAME");
 			string collectionName = GetAppSetting("MONGODB_COLLECTION");
-
-			try
-			{
-				BsonClassMap.RegisterClassMap<MongoItem>();
-			}
-			catch (Exception)
-			{
-
-			}
+			string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
 
 			var client = new MongoClient(connectionString);
 
 			var database = client.GetDatabase(dbName);
 
-			var collection = database.GetCollection<MongoItem>(collectionName);
+			var collection = database.GetCollection<BsonDocument>(collectionName);
 
-			List<MongoItem> matches = collection.Find(map => map.ExternalId == externalId && map.ProjectId == projectId && map.ItemId == itemId).ToList();
+			string id = GetIdFromProps(projectId, externalId, itemId);
 
-			if(matches.Count > 0)
+			var filter = new BsonDocument { { "_id", id } };
+
+			Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
+
+			try
             {
-				string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
+				BsonDocument bsonDocument = await collection.Find(filter).SingleAsync();
+				Dictionary<string, dynamic> document = bsonDocument.ToDictionary();
 
-				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 				foreach (string field in propFields.Split(","))
 				{
-					try
-					{
-						newRow[field] = matches[0][field];
-					}
-					catch (Exception ex)
-					{
-
-					}
+					newRow[field] = document[field];
 				}
-				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
 			}
-            else
+            catch (Exception ex)
             {
-				MongoItem newItem = new MongoItem()
+				//In this case no the document related to this element doesn't exists
+				foreach (string field in propFields.Split(","))
 				{
-					ExternalId = externalId,
-					ProjectId = projectId,
-					ItemId = itemId
-				};
-				await CreateNewItemFromMongo(newItem, collection);
-				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-				newRow["Material"] = "";
-				newRow["Supplier"] = "";
-				newRow["Price"] = "";
-				newRow["Currency"] = "";
-				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+					newRow[field] = "";
+				}
+			}
+            await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+        }
+
+        public async Task<bool> CreateNewItemFromMongo(dynamic collection, string id, Property property)
+        {
+			bool response = true;
+
+			string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
+
+			Dictionary<string, dynamic> newDocument = new Dictionary<string, dynamic>();
+			newDocument["_id"] = id;
+
+			foreach (string field in propFields.Split(","))
+			{
+				try
+				{
+					newDocument[field] = field == property.name ? property.value : "";
+				}
+				catch (Exception ex)
+				{
+
+				}
 			}
 
-		}
-
-        public async Task CreateNewItemFromMongo(MongoItem newItem, dynamic collection)
-        {
-			string message = "";
-
-            try
+			try
             {
-				collection.InsertOne(newItem);
-				message = "New item successfully inserted!";
+				var jsonDoc = Newtonsoft.Json.JsonConvert.SerializeObject(newDocument);
+				var bsonDoc = BsonSerializer.Deserialize<BsonDocument>(jsonDoc);
+				collection.InsertOne(bsonDoc);
 			}
 			catch(Exception ex)
             {
-				message = "Error inserting new item: ex.Message";
+				response = false;
             }
 
-            Console.WriteLine(message);
+			return response;
+
 		}
 
         public async Task ExtractDataFromOracleDB(string connectionId, string externalId, string projectId, string itemId)
@@ -278,20 +279,7 @@ namespace forgeSample.Controllers
 			}
 			else
 			{
-				MongoItem newItem = new MongoItem()
-				{
-					ExternalId = externalId,
-					ProjectId = projectId,
-					ItemId = itemId
-				};
-				Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
-				newRow["Material"] = "";
-				newRow["Supplier"] = "";
-				newRow["Price"] = "";
-				newRow["Currency"] = "";
-				newRow["ASSET_TAG"] = "not found!";
-				newRow["ASSET_TAG"] = "not found!";
-				await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+				
 			}
 		}
 
@@ -320,38 +308,5 @@ namespace forgeSample.Controllers
 		public string category { get; set; }
 		public string name { get; set; }
 		public string value { get; set; }
-	}
-
-	[BsonIgnoreExtraElements]
-	public class MongoItem
-	{
-		//We use this to retrieve property from srting name
-		//https://stackoverflow.com/questions/10283206/setting-getting-the-class-properties-by-string-name
-		public object this[string propertyName]
-		{
-			get
-			{
-				// probably faster without reflection:
-				// like:  return Properties.Settings.Default.PropertyValues[propertyName] 
-				// instead of the following
-				Type myType = typeof(MongoItem);
-				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
-				return myPropInfo.GetValue(this, null);
-			}
-			set
-			{
-				Type myType = typeof(MongoItem);
-				PropertyInfo myPropInfo = myType.GetProperty(propertyName);
-				myPropInfo.SetValue(this, value, null);
-			}
-		}
-
-		public string Material { get; set; }
-		public string Supplier { get; set; }
-		public string Price { get; set; }
-		public string Currency { get; set; }
-		public string ExternalId { get; set; }
-		public string ProjectId { get; set; }
-		public string ItemId { get; set; }
 	}
 }
