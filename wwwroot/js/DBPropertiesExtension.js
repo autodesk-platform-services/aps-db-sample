@@ -155,7 +155,7 @@ async function showNotification(selecteddbId) {
     `<div class="alert-box updated" onclick="highlightDbId(event, ${selecteddbId})">${selecteddbId + ' updated!'}</div>`
   );
   setTimeout(() => {
-    $('#alert_boxes').find(':last-child').fadeIn(500).delay(4000).fadeOut(500, function () { $(this).remove(); });
+    $('#alert_boxes').find(':last-child').fadeIn(500).delay(8000).fadeOut(500, function () { $(this).remove(); });
   }, 100);
 }
 
@@ -200,7 +200,7 @@ async function updateDBData(selecteddbId, property, itemId) {
   };
   apiClientAsync(requestUrl, requestData, 'post');
   $("div.gathering").fadeIn(500).delay(1500).fadeOut(500);
-  alert("Changes sent to DB!");
+  //alert("Changes sent to DB!");
 }
 
 //Here we reach the server endpoint to retrieve the proper data from DB

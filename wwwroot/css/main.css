@@ -25,12 +25,18 @@ body {
     position:relative;
 }
 
+.alert-boxes {
+    display: flex;
+    height: calc(100vh - 56px);
+}
+
 /* Messages for DB */
 .alert-box {
   padding: 15px;
   border: 1px solid transparent;
   border-radius: 4px;
   z-index: 99;
+  position: relative;
   flex: 1;
 }
 
@@ -39,6 +45,7 @@ body {
     background-color: #dff0d8;
     border-color: #d6e9c6;
     position: relative;
+    width: 10vw;
 }
 
 .ready {

@@ -31,7 +31,7 @@ connection.on("ReceiveUpdate", function (selecteddbId, updateResult, message) {
 
 connection.on("ReceiveModification", function (selecteddbId, properties, urn) {
   let receiveNotification = true;
-  if (urn === viewer.model.getSeedUrn() && receiveNotification) {
+  if (urn.replaceAll('=', '') === viewer.model.getSeedUrn() && receiveNotification) {
     addProperties(selecteddbId, properties);
     showNotification(selecteddbId);
   }
