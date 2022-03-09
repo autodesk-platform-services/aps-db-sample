@@ -48,7 +48,7 @@
         </li>
       </ul>
 
-      <ul class="nav navbar-nav right col-lg-2">
+      <!--<ul class="nav navbar-nav right col-lg-2">
         <li>
           <div>
             <div class="alert-box ready">Properties acquired/updated from DB!</div>
@@ -56,7 +56,7 @@
             <div class="alert-box gathering">Gathering/Updating properties from DB!</div>
           </div>
         </li>
-      </ul>
+      </ul>-->
 
     </div>
   </nav>
@@ -93,45 +93,19 @@
           </div>
         </div>
       </div>
-      <div class="col-sm-8 fill">
+      <div class="col-sm-8 fill viewer_container">
+        <div id="alert_boxes">
+          <div class="alert-box ready">Properties acquired/updated from DB!</div>
+          <div class="alert-box failure">Failed to query/update data!</div>
+          <div class="alert-box gathering">Gathering/Updating properties from DB!</div>
+        </div>
         <div id="forgeViewer"></div>
+        <div id="notifications">
+        </div>
       </div>
     </div>
   </div>
 </body>
 <iframe id="hiddenFrame" style="visibility: hidden; display: none" />
-<!--<script>
-  let tokenurl = 'https://l15xenb90a.execute-api.us-east-1.amazonaws.com/default/GetToken';
-
-  window.onload = async () => {
-    await fetch(tokenurl).then(function (response) {
-      return response.json();
-    }).then(function (token) {
-
-      let urn = 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6anBvbWRic2FtcGxlYnVja2V0L3JhY2Jhc2ljc2FtcGxlcHJvamVjdC5ydnQ=';
-
-      const options = {
-        env: 'AutodeskProduction',
-        accessToken: token
-      };
-
-      Autodesk.Viewing.Initializer(options, () => {
-
-        const div = document.getElementById('forgeViewer');
-
-        const config = {};
-
-        viewer = new Autodesk.Viewing.Private.GuiViewer3D(div, config);
-        viewer.start();
-        viewer.setTheme("light-theme");
-        viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }));
-        Autodesk.Viewing.Document.load(`urn:${urn}`, doc => {
-          var viewables = doc.getRoot().getDefaultGeometry();
-          viewer.loadDocumentNode(doc, viewables);
-        });
-      });
-    });
-  }
-</script>-->
 
 </html>

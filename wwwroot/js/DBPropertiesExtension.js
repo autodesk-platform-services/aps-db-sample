@@ -27,8 +27,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.currentProperty = null;
     this.dbId = "";
 
-    //This is the event for property click
-    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyClick = this.onPropertyClick;
     //This is the event for property doubleclick
     Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.onPropertyDoubleClick;
     //This in the event for object selection changes
@@ -36,22 +34,26 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   }
 
   queryProps(method) {
-    viewer.getProperties(viewer.getSelection(), data => method == 'update' ? this.updateDB(data) : this.queryDB(data));
+    //viewer.getProperties(viewer.getSelection(), data => method == 'update' ? this.updateDB(data) : this.queryDB(data));
+    let selecteddbId = viewer.getSelection()[0];
+    method === 'update' ? this.updateDB(selecteddbId) : this.queryDB(selecteddbId);
   }
 
-  updateDB(data) {
-    let externalId = data.externalId;
-    let projectId = selectedNode.projectId;
+  updateDB(selecteddbId) {
+    //let externalId = data.externalId;
+    //let projectId = selectedNode.projectId;
     let itemId = selectedNode.itemId;
-    externalId ? updateDBData(externalId, this.currentProperty, projectId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    //externalId ? updateDBData(selecteddbId, this.currentProperty, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    updateDBData(selecteddbId, this.currentProperty, itemId)
     //this.sendChanges(data.externalId)
   }
 
-  queryDB(data) {
-    let externalId = data.externalId;
-    let projectId = selectedNode.projectId;
+  queryDB(selecteddbId) {
+    //let externalId = data.externalId;
+    //let projectId = selectedNode.projectId;
     let itemId = selectedNode.itemId;
-    externalId ? extractDBData(externalId, projectId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    //externalId ? extractDBData(selecteddbId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    extractDBData(selecteddbId, itemId);
   }
 
   setAggregatedProperties(propertySet) {
@@ -141,56 +143,73 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 };
 
 //Here we show the user the result about the updated parameter
-async function showUpdateResult(idsMap, externalId, updateResult) {
-  let dbId = idsMap[externalId];
+async function showUpdateResult(selecteddbId, updateResult) {
+  //let dbId = idsMap[externalId];
   //viewer.isolate(dbId);
   let selector = (updateResult ? "div.ready" : "div.failure")
   $(selector).fadeIn(500).delay(2000).fadeOut(500);
 }
 
+async function showNotification(selecteddbId) {
+  $('#alert_boxes').append(
+    `<div class="alert-box updated" onclick="highlightDbId(event, ${selecteddbId})">${selecteddbId + ' updated!'}</div>`
+  );
+  setTimeout(() => {
+    $('#alert_boxes').find(':last-child').fadeIn(500).delay(4000).fadeOut(500, function () { $(this).remove(); });
+  }, 100);
+}
+
+async function highlightDbId(event, selecteddbId) {
+  event.target.remove();
+  viewer.isolate(selecteddbId);
+  viewer.fitToView(selecteddbId);
+}
+
 //Here we add the properties aquired from DB to the proper dbid proper property panel
-async function addProperties(idsMap, externalId, properties) {
-  let dbId = idsMap[externalId];
+async function addProperties(selecteddbId, properties) {
+  //let dbId = idsMap[externalId];
   let ext = viewer.getExtension('DBPropertiesExtension');
 
-  ext.panel.properties[dbId] = {
+  ext.panel.properties[selecteddbId] = {
     "Properties From DB": {
 
     }
   };
   for (const property of Object.keys(properties)) {
-
-    ext.panel.properties[dbId]["Properties From DB"][property] = properties[property];
+    ext.panel.properties[selecteddbId]["Properties From DB"][property] = properties[property];
   }
-  ext.panel.setdbIdProperties(dbId);
+  ext.panel.setdbIdProperties(selecteddbId);
 
-  $("div.ready").fadeIn(500).delay(2000).fadeOut(500);
+  //showAddedProperty();
+  $("div.ready").fadeIn(500).delay(1500).fadeOut(500);
+}
+
+async function showAddedProperty() {
+  $('#alret_boxes').a
 }
 
 //Here we reach the server endpoint to update the proper data from DB
-async function updateDBData(externalId, property, projectId, itemId) {
+async function updateDBData(selecteddbId, property, itemId) {
   const requestUrl = '/api/dbconnector';
   const requestData = {
     'connectionId': connection.connection.connectionId,
     'dbProvider': $('#dboptions').find(":selected").text(),
     'property': property,
-    'externalId': externalId,
-    'projectId': projectId,
+    'selecteddbId': selecteddbId,
     'itemId': itemId
   };
   apiClientAsync(requestUrl, requestData, 'post');
-  $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
+  $("div.gathering").fadeIn(500).delay(1500).fadeOut(500);
   alert("Changes sent to DB!");
 }
 
 //Here we reach the server endpoint to retrieve the proper data from DB
-async function extractDBData(externalId, projectId, itemId) {
+async function extractDBData(selecteddbId, itemId) {
   try {
     const requestUrl = '/api/dbconnector';
     const requestData = {
       'connectionId': connection.connection.connectionId,
-      'externalId': externalId,
-      'projectId': projectId,
+      'selecteddbId': selecteddbId,
       'itemId': itemId,
       'dbProvider': $('#dboptions').find(":selected").text()
     };

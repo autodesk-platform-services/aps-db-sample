@@ -18,13 +18,23 @@
 
 var connection = new signalR.HubConnectionBuilder().withUrl("/dbhub").build();
 
-connection.on("ReceiveProperties", function (externalId, properties) {
-  viewer.model.getExternalIdMapping(idsMap => addProperties(idsMap, externalId, properties));
+connection.on("ReceiveProperties", function (selecteddbId, properties) {
+  //viewer.model.getExternalIdMapping(idsMap => addProperties(idsMap, selecteddbId, properties));
+  addProperties(selecteddbId, properties);
 });
 
-connection.on("ReceiveUpdate", function (externalId, updateResult, message) {
-  viewer.model.getExternalIdMapping(idsMap => showUpdateResult(idsMap, externalId, updateResult));
+connection.on("ReceiveUpdate", function (selecteddbId, updateResult, message) {
+  //viewer.model.getExternalIdMapping(idsMap => showUpdateResult(idsMap, externalId, updateResult));
+  showUpdateResult(selecteddbId, updateResult)
   console.log(message);
+});
+
+connection.on("ReceiveModification", function (selecteddbId, properties, urn) {
+  let receiveNotification = true;
+  if (urn === viewer.model.getSeedUrn() && receiveNotification) {
+    addProperties(selecteddbId, properties);
+    showNotification(selecteddbId);
+  }
 });
 
 connection.start().then(function () {

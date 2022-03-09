@@ -51,10 +51,10 @@ namespace forgeSample.Controllers
 			switch (dBUpdate.dbProvider.ToLower())
 			{
 				case "oracle":
-					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId);
+					UpdateDataFromOracleDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.selecteddbId);
 					break;
 				case "mongo":
-					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.externalId, dBUpdate.projectId, dBUpdate.itemId);
+					UpdateDataFromMongoDB(dBUpdate.connectionId, dBUpdate.property, dBUpdate.selecteddbId, dBUpdate.itemId);
 					break;
 				default:
 					break;
@@ -62,11 +62,12 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string externalId, string projectId, string itemId)
+		public async Task UpdateDataFromMongoDB(string connectionId, Property property, string selecteddbId, string itemId)
 		{
 			string connectionString = GetAppSetting("MONGODB_CON_STRING");
 			string dbName = GetAppSetting("MONGODG_DBNAME");
 			string collectionName = GetAppSetting("MONGODB_COLLECTION");
+			string propFields = GetAppSetting("DB_PROPERTIES_NAMES");
 
 			var client = new MongoClient(connectionString);
 
@@ -74,7 +75,7 @@ namespace forgeSample.Controllers
 
 			var collection = database.GetCollection<BsonDocument>(collectionName);
 
-			string id = GetIdFromProps(projectId, externalId, itemId);
+			string id = GetIdFromProps(itemId, selecteddbId);
 
 			var filter = new BsonDocument { { "_id", id } };
 
@@ -89,16 +90,19 @@ namespace forgeSample.Controllers
                 createResult = await CreateNewItemFromMongo(collection, id, property);
             }
 
-			string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} items modified!" : "No item was modified!");
+			string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} items modified!" : "New Document created!");
 
-			DBHub.SendUpdate(_dbHub, connectionId, externalId, updateResult.IsModifiedCountAvailable, message);
+			Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
+			newRow[property.name] = property.value;
+
+			DBHub.SendUpdate(_dbHub, connectionId, selecteddbId, updateResult.IsModifiedCountAvailable, message, newRow, itemId);
 
 		}
 
 		//Through this function we obtain the id used by mONGOdb BASED on our model
-        public string GetIdFromProps(string projectId, string externalId, string itemId)
+        public string GetIdFromProps(string itemId, string selecteddbId)
         {
-			return $"{projectId}_{itemId}_{externalId}";
+			return $"{itemId}_{selecteddbId}";
 
 		}
 
@@ -123,11 +127,11 @@ namespace forgeSample.Controllers
 				cmd.CommandText = "update " + tableName + " set " + property.name + "= \'" + property.value + "\' where " + filterField + "= \'" + externalId + "\'";
 				int result = cmd.ExecuteNonQuery();
 
-				DBHub.SendUpdate(_dbHub, connectionId, externalId, true, $"{result} rows affected!");
+				//DBHub.SendUpdate(_dbHub, connectionId, externalId, true, $"{result} rows affected!");
 			}
 			catch (Exception ex)
 			{
-				DBHub.SendUpdate(_dbHub, connectionId, externalId, false, ex.Message);
+				//DBHub.SendUpdate(_dbHub, connectionId, externalId, false, ex.Message);
 			}
 		}
 
@@ -136,19 +140,20 @@ namespace forgeSample.Controllers
 		public object GetDBData()
 		{
 			string connectionId = base.Request.Query["connectionId"];
-			string externalId = base.Request.Query["externalId"];
+			//string externalId = base.Request.Query["externalId"];
+			string selecteddbId = base.Request.Query["selecteddbId"];
 			string dbProvider = base.Request.Query["dbProvider"];
-			string projectId = base.Request.Query["projectId"];
+			//string projectId = base.Request.Query["projectId"];
 			string itemId = base.Request.Query["itemId"];
 
 
 			switch (dbProvider.ToLower())
 			{
 				case "oracle":
-					ExtractDataFromOracleDB(connectionId, externalId, projectId, itemId);
+					ExtractDataFromOracleDB(connectionId, selecteddbId, itemId);
 					break;
 				case "mongo":
-					ExtractDataFromMongoDB(connectionId, externalId, projectId, itemId);
+					ExtractDataFromMongoDB(connectionId, selecteddbId, itemId);
 					break;
 				default:
 					break;
@@ -157,7 +162,7 @@ namespace forgeSample.Controllers
 			return new { Success = true };
 		}
 
-		public async Task ExtractDataFromMongoDB( string connectionId, string externalId, string projectId, string itemId)
+		public async Task ExtractDataFromMongoDB( string connectionId, string selecteddbId, string itemId)
 		{
 
 			string connectionString = GetAppSetting("MONGODB_CON_STRING");
@@ -171,7 +176,7 @@ namespace forgeSample.Controllers
 
 			var collection = database.GetCollection<BsonDocument>(collectionName);
 
-			string id = GetIdFromProps(projectId, externalId, itemId);
+			string id = GetIdFromProps(itemId, selecteddbId);
 
 			var filter = new BsonDocument { { "_id", id } };
 
@@ -195,7 +200,7 @@ namespace forgeSample.Controllers
 					newRow[field] = "";
 				}
 			}
-            await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+            await DBHub.SendData(_dbHub, connectionId, selecteddbId, newRow);
         }
 
         public async Task<bool> CreateNewItemFromMongo(dynamic collection, string id, Property property)
@@ -234,7 +239,7 @@ namespace forgeSample.Controllers
 
 		}
 
-        public async Task ExtractDataFromOracleDB(string connectionId, string externalId, string projectId, string itemId)
+        public async Task ExtractDataFromOracleDB(string connectionId, string selecteddbId, string itemId)
 		{
 			//string dbTag = await GetMappIds(externalId);
 
@@ -255,7 +260,7 @@ namespace forgeSample.Controllers
 					string filterField = GetAppSetting("DB_FILTER_PROPERTY");
 
 					//Modify the anonymous PL/SQL GRANT command if you wish to modify the privileges granted
-					cmd.CommandText = "select " + propFields + " from " + tableName + " where " + filterField + "= \'" + externalId + "\'";
+					cmd.CommandText = "select " + propFields + " from " + tableName + " where " + filterField + "= \'" + selecteddbId + "\'";
 					OracleDataReader reader = cmd.ExecuteReader();
 					while (reader.Read())
 					{
@@ -265,7 +270,7 @@ namespace forgeSample.Controllers
 							newRow[field] = reader[field];
 						}
 						newRow["Status"] = "Connection Succeeded";
-						await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+						await DBHub.SendData(_dbHub, connectionId, selecteddbId, newRow);
 					}
 
 					reader.Dispose();
@@ -274,7 +279,7 @@ namespace forgeSample.Controllers
 				{
 					Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 					newRow["Status"] = "Connection Failed";
-					await DBHub.SendData(_dbHub, connectionId, externalId, newRow);
+					await DBHub.SendData(_dbHub, connectionId, selecteddbId, newRow);
 				}
 			}
 			else
@@ -298,8 +303,7 @@ namespace forgeSample.Controllers
 		public Property property { get; set; } 
 		public string connectionId { get; set; } 
 		public string dbProvider { get; set; }
-		public string externalId { get; set; }
-		public string projectId { get; set; }
+		public string selecteddbId { get; set; }
 		public string itemId { get; set; }
 	}
 

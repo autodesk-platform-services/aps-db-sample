@@ -9,14 +9,15 @@ namespace forge_viewer_db_properties.Hubs
 {
 	public class DBHub : Microsoft.AspNetCore.SignalR.Hub
 	{
-		public async static Task SendData(IHubContext<DBHub> hub,string connectionId, string externalId, Dictionary<string, dynamic> properties)
+		public async static Task SendData(IHubContext<DBHub> hub,string connectionId, string selecteddbId, Dictionary<string, dynamic> properties)
 		{
-			await hub.Clients.Client(connectionId).SendAsync("ReceiveProperties", externalId, properties);
+			await hub.Clients.Client(connectionId).SendAsync("ReceiveProperties", selecteddbId, properties);
 		}
 
-		public async static Task SendUpdate(IHubContext<DBHub> hub, string connectionId, string externalId, bool updateResult, string message)
+		public async static Task SendUpdate(IHubContext<DBHub> hub, string connectionId, string selecteddbId, bool updateResult, string message, Dictionary<string, dynamic> properties, string urn)
 		{
-			await hub.Clients.Client(connectionId).SendAsync("ReceiveUpdate", externalId, updateResult, message);
+            await hub.Clients.Client(connectionId).SendAsync("ReceiveUpdate", selecteddbId, updateResult, message);
+            await hub.Clients.AllExcept(connectionId).SendAsync("ReceiveModification", selecteddbId, properties, urn);
 		}
 	}
 }
