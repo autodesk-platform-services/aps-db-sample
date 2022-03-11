@@ -23,7 +23,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   constructor(viewer, options) {
     super(viewer, options);
     this.properties = options.properties || {};
-    //this.currentText = "";
     this.currentProperty = null;
     this.dbId = "";
 
@@ -34,25 +33,19 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   }
 
   queryProps(method) {
-    //viewer.getProperties(viewer.getSelection(), data => method == 'update' ? this.updateDB(data) : this.queryDB(data));
-    let selecteddbId = viewer.getSelection()[0];
-    method === 'update' ? this.updateDB(selecteddbId) : this.queryDB(selecteddbId);
+    if (this.viewer.getSelection().length == 1) {
+      let selecteddbId = this.viewer.getSelection()[0];
+      method === 'update' ? this.updateDB(selecteddbId) : this.queryDB(selecteddbId);
+    }
   }
 
   updateDB(selecteddbId) {
-    //let externalId = data.externalId;
-    //let projectId = selectedNode.projectId;
     let itemId = selectedNode.itemId;
-    //externalId ? updateDBData(selecteddbId, this.currentProperty, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
-    updateDBData(selecteddbId, this.currentProperty, itemId)
-    //this.sendChanges(data.externalId)
+    updateDBData(selecteddbId, this.currentProperty, itemId);
   }
 
   queryDB(selecteddbId) {
-    //let externalId = data.externalId;
-    //let projectId = selectedNode.projectId;
     let itemId = selectedNode.itemId;
-    //externalId ? extractDBData(selecteddbId, itemId) : $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
     extractDBData(selecteddbId, itemId);
   }
 
@@ -86,7 +79,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
     catch { }
     this.setdbIdProperties(this.dbId);
-    //this.currentProperty.value = '"<input type="text">"';
     this.currentProperty.value = newValue;
   }
 
@@ -95,7 +87,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     if (this.checkProperty(property)) {
       this.currentProperty = property;
       Swal.fire({
-        title: `Type the new value for the property ${property.name}`,
+        title: `Type the new value for ${property.name}`,
         input: 'text',
         inputValue: property.value,
         inputAttributes: {
@@ -119,18 +111,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
   }
 
-  //onPropertyClick(property, event) {
-  //  this.dbId = viewer.getSelection()[0];
-  //  if (this.checkProperty(property)) {
-  //    this.currentProperty = property;
-  //    this.currentText = property.value;
-  //    console.log("Current property changed to " + property.name + " : " + property.value);
-  //  }
-  //  else {
-  //    console.log("This property isn't vailable!");
-  //  }
-  //}
-
   checkProperty(property) {
     try {
       //Here we check if the property selected is aquired from DB
@@ -144,8 +124,6 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 
 //Here we show the user the result about the updated parameter
 async function showUpdateResult(selecteddbId, updateResult) {
-  //let dbId = idsMap[externalId];
-  //viewer.isolate(dbId);
   let selector = (updateResult ? "div.ready" : "div.failure")
   $(selector).fadeIn(500).delay(2000).fadeOut(500);
 }
@@ -167,7 +145,6 @@ async function highlightDbId(event, selecteddbId) {
 
 //Here we add the properties aquired from DB to the proper dbid proper property panel
 async function addProperties(selecteddbId, properties) {
-  //let dbId = idsMap[externalId];
   let ext = viewer.getExtension('DBPropertiesExtension');
 
   ext.panel.properties[selecteddbId] = {
@@ -179,13 +156,6 @@ async function addProperties(selecteddbId, properties) {
     ext.panel.properties[selecteddbId]["Properties From DB"][property] = properties[property];
   }
   ext.panel.setdbIdProperties(selecteddbId);
-
-  //showAddedProperty();
-  $("div.ready").fadeIn(500).delay(1500).fadeOut(500);
-}
-
-async function showAddedProperty() {
-  $('#alret_boxes').a
 }
 
 //Here we reach the server endpoint to update the proper data from DB
@@ -200,7 +170,6 @@ async function updateDBData(selecteddbId, property, itemId) {
   };
   apiClientAsync(requestUrl, requestData, 'post');
   $("div.gathering").fadeIn(500).delay(1500).fadeOut(500);
-  //alert("Changes sent to DB!");
 }
 
 //Here we reach the server endpoint to retrieve the proper data from DB
@@ -214,11 +183,11 @@ async function extractDBData(selecteddbId, itemId) {
       'dbProvider': $('#dboptions').find(":selected").text()
     };
     apiClientAsync(requestUrl, requestData);
-    $("div.gathering").fadeIn(500).delay(2000).fadeOut(500);
+    $("div.gathering").fadeIn(500).delay(1500).fadeOut(500);
   }
   catch (err) {
     console.log(err);
-    $("div.failure").fadeIn(500).delay(2000).fadeOut(500);
+    $("div.failure").fadeIn(500).delay(1500).fadeOut(500);
   }
 }
 

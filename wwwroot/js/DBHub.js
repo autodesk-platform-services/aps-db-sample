@@ -19,19 +19,22 @@
 var connection = new signalR.HubConnectionBuilder().withUrl("/dbhub").build();
 
 connection.on("ReceiveProperties", function (selecteddbId, properties) {
-  //viewer.model.getExternalIdMapping(idsMap => addProperties(idsMap, selecteddbId, properties));
-  addProperties(selecteddbId, properties);
+  addProperties(selecteddbId, properties).then(() => {
+    $("div.ready").fadeIn(500).delay(1500).fadeOut(500);
+  }).catch((err) => {
+    console.log(err);
+    $("div.failure").fadeIn(500).delay(1500).fadeOut(500);
+  });
 });
 
 connection.on("ReceiveUpdate", function (selecteddbId, updateResult, message) {
-  //viewer.model.getExternalIdMapping(idsMap => showUpdateResult(idsMap, externalId, updateResult));
   showUpdateResult(selecteddbId, updateResult)
   console.log(message);
 });
 
 connection.on("ReceiveModification", function (selecteddbId, properties, urn) {
-  let receiveNotification = true;
-  if (urn.replaceAll('=', '') === viewer.model.getSeedUrn() && receiveNotification) {
+  let disableNotification = $('#disablenotifications')[0].checked;
+  if (urn.replaceAll('=', '') === viewer.model.getSeedUrn() && !disableNotification) {
     addProperties(selecteddbId, properties);
     showNotification(selecteddbId);
   }

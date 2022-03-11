@@ -90,7 +90,7 @@ namespace forgeSample.Controllers
                 createResult = await CreateNewItemFromMongo(collection, id, property);
             }
 
-			string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} items modified!" : "New Document created!");
+			string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} item modified!" : createResult ? "New Document created!" : "No Document created!");
 
 			Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 			newRow[property.name] = property.value;
@@ -99,11 +99,10 @@ namespace forgeSample.Controllers
 
 		}
 
-		//Through this function we obtain the id used by mONGOdb BASED on our model
+		//Through this function we obtain the id used by Mongo based on our model
         public string GetIdFromProps(string itemId, string selecteddbId)
         {
 			return $"{itemId}_{selecteddbId}";
-
 		}
 
         public async Task UpdateDataFromOracleDB(string connectionId, Property property, string externalId)
@@ -189,7 +188,16 @@ namespace forgeSample.Controllers
 
 				foreach (string field in propFields.Split(","))
 				{
-					newRow[field] = document[field];
+                    try
+                    {
+						newRow[field] = document[field];
+					}
+					catch(Exception keyEx)
+                    {
+						//In this case we have a field on env variable that's not present on Mongo Document
+						newRow[field] = "";
+
+                    }				
 				}
 			}
             catch (Exception ex)
@@ -211,18 +219,19 @@ namespace forgeSample.Controllers
 
 			Dictionary<string, dynamic> newDocument = new Dictionary<string, dynamic>();
 			newDocument["_id"] = id;
+			newDocument[property.name] = property.value;
 
-			foreach (string field in propFields.Split(","))
-			{
-				try
-				{
-					newDocument[field] = field == property.name ? property.value : "";
-				}
-				catch (Exception ex)
-				{
-
-				}
-			}
+			//foreach (string field in propFields.Split(","))
+			//{
+			//	try
+			//	{
+			//		newDocument[field] = field == property.name ? property.value : "";
+			//	}
+			//	catch (Exception ex)
+			//	{
+			//		
+			//	}
+			//}
 
 			try
             {
@@ -241,7 +250,6 @@ namespace forgeSample.Controllers
 
         public async Task ExtractDataFromOracleDB(string connectionId, string selecteddbId, string itemId)
 		{
-			//string dbTag = await GetMappIds(externalId);
 
 			if (true)
 			{
