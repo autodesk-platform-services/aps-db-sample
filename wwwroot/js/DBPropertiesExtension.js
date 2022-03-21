@@ -69,7 +69,14 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
           this.addProperty(propName, prop, groupName);
         }
       }
+      //this.highlight(CustomCategoryName);
     }
+  }
+
+  highlightCustomProperties() {
+    let currentElement = this.highlightableElements[CustomCategoryName];
+    let unhighlighted = currentElement[0].innerHTML.replace("<\/highlight>", "").replace("<highlight>", "");
+    this.highlightableElements[CustomCategoryName][0].innerHTML = `<highlight>${unhighlighted}</highlight>`;
   }
 
   async updateCurrentProperty(newValue) {
@@ -122,6 +129,8 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   }
 };
 
+var CustomCategoryName = "Properties From DB";
+
 //Here we show the user the result about the updated parameter
 async function showUpdateResult(selecteddbId, updateResult) {
   let selector = (updateResult ? "div.ready" : "div.failure")
@@ -148,14 +157,15 @@ async function addProperties(selecteddbId, properties) {
   let ext = viewer.getExtension('DBPropertiesExtension');
 
   ext.panel.properties[selecteddbId] = {
-    "Properties From DB": {
+    [CustomCategoryName]: {
 
     }
   };
   for (const property of Object.keys(properties)) {
-    ext.panel.properties[selecteddbId]["Properties From DB"][property] = properties[property];
+    ext.panel.properties[selecteddbId][[CustomCategoryName]][property] = properties[property];
   }
   ext.panel.setdbIdProperties(selecteddbId);
+  ext.panel.highlightCustomProperties();
 }
 
 //Here we reach the server endpoint to update the proper data from DB
