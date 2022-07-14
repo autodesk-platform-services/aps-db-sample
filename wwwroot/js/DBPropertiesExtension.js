@@ -25,17 +25,39 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.properties = options.properties || {};
     this.currentProperty = null;
     this.dbId = "";
+    this._table = this.createTable();
 
     //This is the event for property doubleclick
-    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.onPropertyDoubleClick;
+    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.handlePropertyUpdate;
     //This in the event for object selection changes
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.queryProps.bind(this));
   }
 
+  createTable(options) {
+    let newTable = document.createElement("table");
+    newTable.style.width = /*options.tableWidth ||*/ "100%";
+    let tableCaption = document.createElement("caption");
+    tableCaption.style.textAlign = /*options.captionTextAlign ||*/ "center";
+    tableCaption.innerHTML = CustomCategoryName;
+    tableCaption.style.fontWeight = /*options.captionFontWeight ||*/ "bold";
+    tableCaption.style.color = /*options.captionColor ||*/ "white";
+    newTable.appendChild(tableCaption);
+    let _tbodyId = /*options.tbodyId ||*/ "DBPropertyPanel_tbody";
+    let old_tbody = document.getElementById(_tbodyId);
+    if (!!old_tbody) {
+      old_tbody.parentElement.removeChild(old_tbody)
+    }
+    let _tbody = document.createElement("tbody");
+    _tbody.id = _tbodyId;
+    newTable.appendChild(_tbody);
+    this._tbody = _tbody;
+    return newTable;
+  }
+
   queryProps(method) {
     if (this.viewer.getSelection().length == 1) {
-      let selecteddbId = this.viewer.getSelection()[0];
-      method === 'update' ? this.updateDB(selecteddbId) : this.queryDB(selecteddbId);
+      this.dbId = this.viewer.getSelection()[0];
+      method === 'update' ? this.updateDB(this.dbId) : this.queryDB(this.dbId);
     }
   }
 
@@ -62,21 +84,40 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
   setdbIdProperties(dbId) {
     var propsForObject = this.properties[dbId.toString()];
     if (propsForObject) {
+      this.emptyTableBody();
+      let _document = document;
+      //this.addProperty("NAME", "VALUE", CustomCategoryName);
       for (const groupName in propsForObject) {
         const group = propsForObject[groupName];
         for (const propName in group) {
-          const prop = group[propName];
-          this.addProperty(propName, prop, groupName);
+          const propValue = group[propName];
+          //this.addProperty(propName, propValue, groupName);
+          let button = new Autodesk.Viewing.Private.OptionButton(propName, this._tbody);
+          button.setGlobalManager(this.globalManager);
+          let tdValue = _document.createElement("td");
+          //Original with just value
+          //tdValue.innerHTML = propValue;
+
+          //Here with input
+          let inputValue = _document.createElement("input");
+          inputValue.type = "text";
+          //inputValue.disabled = true;
+          inputValue.placeholder = propValue;
+          tdValue.appendChild(inputValue);
+
+          tdValue.id = propName + "_" + propValue;
+          tdValue.style.textAlign = "left";
+          button.sliderRow.appendChild(tdValue);
+          button.setOnClick(this.handlePropertyUpdate.bind(this));
         }
       }
+      this.container.lastChild.appendChild(this._table);
       //this.highlight(CustomCategoryName);
     }
   }
 
-  highlightCustomProperties() {
-    let currentElement = this.highlightableElements[CustomCategoryName];
-    let unhighlighted = currentElement[0].innerHTML.replace("<\/highlight>", "").replace("<highlight>", "");
-    this.highlightableElements[CustomCategoryName][0].innerHTML = `<highlight>${unhighlighted}</highlight>`;
+  emptyTableBody() {
+    $(`#${this._tbody.id}`).empty();
   }
 
   async updateCurrentProperty(newValue) {
@@ -89,33 +130,56 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.currentProperty.value = newValue;
   }
 
-  onPropertyDoubleClick(property, event) {
-    this.dbId = viewer.getSelection()[0];
-    if (this.checkProperty(property)) {
-      this.currentProperty = property;
-      Swal.fire({
-        title: `Type the new value for ${property.name}`,
-        input: 'text',
-        inputValue: property.value,
-        inputAttributes: {
-          autocapitalize: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Update DB',
-        showLoaderOnConfirm: true,
-        allowOutsideClick: () => !Swal.isLoading()
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.updateCurrentProperty(result.value);
-          this.queryProps('update');
-          console.log("Current property changed to " + property.name + " : " + property.value);
-        }
-      })
-      
-    }
-    else {
-      console.log("This property isn't vailable!");
-    }
+  handlePropertyUpdate(event) {
+    let propName = event.target.innerHTML;
+    let propValue = this.properties[this.dbId][CustomCategoryName][propName];
+    this.currentProperty = {
+      name: propName,
+      value: propValue,
+      category: CustomCategoryName
+    };
+    Swal.fire({
+      title: `Type the new value for ${propName}`,
+      input: 'text',
+      inputValue: this.currentProperty.value,
+      inputAttributes: {
+        autocapitalize: 'off'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Update DB',
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.updateCurrentProperty(result.value);
+        this.queryProps('update');
+        console.log("Current property changed to " + propName + " : " + result.value);
+      }
+    })
+    //if (this.checkProperty(property)) {
+    //  this.currentProperty = property;
+    //  Swal.fire({
+    //    title: `Type the new value for ${property.name}`,
+    //    input: 'text',
+    //    inputValue: property.value,
+    //    inputAttributes: {
+    //      autocapitalize: 'off'
+    //    },
+    //    showCancelButton: true,
+    //    confirmButtonText: 'Update DB',
+    //    showLoaderOnConfirm: true,
+    //    allowOutsideClick: () => !Swal.isLoading()
+    //  }).then((result) => {
+    //    if (result.isConfirmed) {
+    //      this.updateCurrentProperty(result.value);
+    //      this.queryProps('update');
+    //      console.log("Current property changed to " + property.name + " : " + property.value);
+    //    }
+    //  })
+    //}
+    //else {
+    //  console.log("This property isn't vailable!");
+    //}
   }
 
   checkProperty(property) {
@@ -165,7 +229,7 @@ async function addProperties(selecteddbId, properties) {
     ext.panel.properties[selecteddbId][[CustomCategoryName]][property] = properties[property];
   }
   ext.panel.setdbIdProperties(selecteddbId);
-  ext.panel.highlightCustomProperties();
+  //ext.panel.highlightCustomProperties();
 }
 
 //Here we reach the server endpoint to update the proper data from DB
