@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.css">
   <link rel="stylesheet" href="https://unpkg.com/inspire-tree-dom@4.0.6/dist/inspire-tree-light.min.css">
   <link rel="stylesheet" href="/main.css">
@@ -21,11 +22,21 @@
     <div id="hubstree"></div>
   </div>
   <div id="preview"></div>
+  <div id="alert_boxes">
+    <div class="alert-box gathering">Gathering Data!</div>
+    <div class="alert-box ready">Success!</div>
+    <div class="alert-box failure">Fail!</div>
+  </div>
   <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
   <script src="https://unpkg.com/inspire-tree@4.3.1/dist/inspire-tree.js"></script>
   <script src="https://unpkg.com/inspire-tree-dom@4.0.6/dist/inspire-tree-dom.min.js"></script>
   <script src="/main.js" type="module"></script>
+  <!--DB Connector-->
+  <script src="/Extensions/DBPropertiesExtension.js"></script>
+  <!--signalr-->
+  <script src="/signalr/dist/browser/signalr.js"></script>
+  <script src="/Hub/DBHub.js"></script>
 </body>
 
 </html>

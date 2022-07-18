@@ -1,4 +1,5 @@
 using System;
+using forge_viewer_db_properties.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,11 @@ public class Startup
 			throw new ApplicationException("Missing required environment variables FORGE_CLIENT_ID, FORGE_CLIENT_SECRET, or FORGE_CALLBACK_URL.");
 		}
 		services.AddSingleton<ForgeService>(new ForgeService(ForgeClientID, ForgeClientSecret, ForgeCallbackURL, ForgeBucket));
+		services.AddSignalR(o =>
+		{
+			o.EnableDetailedErrors = true;
+			o.MaximumReceiveMessageSize = 10240; // bytes
+		});
 	}
 
 	// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,6 +48,7 @@ public class Startup
 		app.UseEndpoints(endpoints =>
 		{
 			endpoints.MapControllers();
+			endpoints.MapHub<DBHub>("/dbhub");
 		});
 	}
 }
