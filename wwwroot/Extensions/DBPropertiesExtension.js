@@ -213,13 +213,13 @@ async function showNotification(selecteddbId) {
 
 async function highlightDbId(event, selecteddbId) {
   event.target.remove();
-  viewer.isolate(selecteddbId);
-  viewer.fitToView(selecteddbId);
+  _viewer.isolate(selecteddbId);
+  _viewer.fitToView(selecteddbId);
 }
 
 //Here we add the properties aquired from DB to the proper dbid proper property panel
 async function addProperties(selecteddbId, properties) {
-  let ext = viewer.getExtension('DBPropertiesExtension');
+  let ext = _viewer.getExtension('DBPropertiesExtension');
 
   ext.panel.properties[selecteddbId] = {
     [CustomCategoryName]: {
@@ -235,7 +235,7 @@ async function addProperties(selecteddbId, properties) {
 
 //Here we reach the server endpoint to update the proper data from DB
 async function updateDBData(selecteddbId, property, itemId) {
-  const requestUrl = '/api/dbconnector';
+  const requestUrl = '/api/db/dbconnector';
   const requestData = {
     'connectionId': connection.connection.connectionId,
     'dbProvider': 'mongo',
@@ -250,7 +250,7 @@ async function updateDBData(selecteddbId, property, itemId) {
 //Here we reach the server endpoint to retrieve the proper data from DB
 async function extractDBData(selecteddbId, itemId) {
   try {
-    const requestUrl = '/api/dbconnector';
+    const requestUrl = '/api/db/dbconnector';
     const requestData = {
       'connectionId': connection.connection.connectionId,
       'selecteddbId': selecteddbId,
@@ -291,12 +291,15 @@ function apiClientAsync(requestUrl, requestData = null, requestMethod = 'get') {
   return def.promise();
 }
 
+var _viewer;
+
 // *******************************************
 // DB Properties Extension
 // *******************************************
 class DBPropertiesExtension extends Autodesk.Viewing.Extension {
   constructor(viewer, options) {
     super(viewer, options);
+    _viewer = viewer;
 
     this.panel = new DBPropertyPanel(viewer, options);
   }

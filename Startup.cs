@@ -23,11 +23,16 @@ public class Startup
 		var ForgeClientSecret = Configuration["FORGE_CLIENT_SECRET"];
 		var ForgeCallbackURL = Configuration["FORGE_CALLBACK_URL"];
 		var ForgeBucket = Configuration["FORGE_BUCKET"]; // Optional
+		var mongoDBConnectionString = Configuration["MONGODB_CON_STRING"];
+		var mongoDBName = Configuration["MONGODG_DBNAME"];
+		var mongoDBCollection = Configuration["MONGODB_COLLECTION"];
+		var mongoDBProperties = Configuration["DB_PROPERTIES_NAMES"];
 		if (string.IsNullOrEmpty(ForgeClientID) || string.IsNullOrEmpty(ForgeClientSecret) || string.IsNullOrEmpty(ForgeCallbackURL))
 		{
 			throw new ApplicationException("Missing required environment variables FORGE_CLIENT_ID, FORGE_CLIENT_SECRET, or FORGE_CALLBACK_URL.");
 		}
 		services.AddSingleton<ForgeService>(new ForgeService(ForgeClientID, ForgeClientSecret, ForgeCallbackURL, ForgeBucket));
+		services.AddSingleton<DBService>(new DBService(mongoDBName, mongoDBCollection, mongoDBConnectionString, mongoDBProperties));
 		services.AddSignalR(o =>
 		{
 			o.EnableDetailedErrors = true;
