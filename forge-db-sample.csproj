@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autodesk.Forge" Version="1.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.7" />
     <PackageReference Include="MongoDB.Driver" Version="2.16.1" />
   </ItemGroup>
 
