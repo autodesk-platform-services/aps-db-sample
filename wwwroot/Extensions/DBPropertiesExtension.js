@@ -28,7 +28,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     this.modelUrn = _viewer.model.getSeedUrn();
 
     //This is the event for property doubleclick
-    Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.handlePropertyUpdate;
+    //Autodesk.Viewing.UI.PropertyPanel.prototype.onPropertyDoubleClick = this.handlePropertyUpdate;
     //This in the event for object selection changes
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.queryProps.bind(this));
   }
@@ -89,11 +89,7 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
 
   async updateCurrentProperty(newValue) {
     this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = newValue;
-    try {
-      this.removeProperty(this.currentProperty.name, this.currentProperty.value, this.currentProperty.category);
-    }
-    catch { }
-    this.setdbIdProperties(this.dbId);
+    this.setdbIdProperty(this.dbId);
     this.currentProperty.value = newValue;
   }
 
@@ -172,13 +168,6 @@ async function updateDBData(selecteddbId, property, itemId) {
     'selecteddbId': selecteddbId,
     'itemId': itemId
   };
-  //fetch(requestUrl, {
-  //  method: 'POST',
-  //  headers: {
-  //    'Content-Type': 'application/json'
-  //  },
-  //  data: JSON.stringify(requestData)
-  //})
   apiClientAsync(requestUrl, requestData, 'post');
   $("div.gathering").fadeIn(500).delay(1500).fadeOut(500);
 }

@@ -17,7 +17,10 @@ namespace forge_viewer_db_properties.Hubs
 		public async static Task SendUpdate(IHubContext<DBHub> hub, string connectionId, string selecteddbId, bool updateResult, string message, Dictionary<string, dynamic> properties, string urn)
 		{
 			await hub.Clients.Client(connectionId).SendAsync("ReceiveUpdate", selecteddbId, updateResult, message);
-			await hub.Clients.AllExcept(connectionId).SendAsync("ReceiveModification", selecteddbId, properties, urn);
+			if (updateResult)
+			{
+				await hub.Clients.AllExcept(connectionId).SendAsync("ReceiveModification", selecteddbId, properties, urn);
+			}
 		}
 	}
 }

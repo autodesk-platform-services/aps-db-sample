@@ -34,7 +34,7 @@ public partial class DBService
 			createResult = await CreateNewItemFromMongo(collection, id, property);
 		}
 
-		string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} item modified!" : createResult ? "New Document created!" : "No Document created!");
+		string message = (updateResult.IsModifiedCountAvailable ? $"{updateResult.ModifiedCount} item modified!" : createResult ? "New Document created!" : "Error! No Document created/modified!");
 
 		Dictionary<string, dynamic> newRow = new Dictionary<string, dynamic>();
 		newRow[property.name] = property.value;

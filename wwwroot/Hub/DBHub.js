@@ -28,13 +28,13 @@ connection.on("ReceiveProperties", function (selecteddbId, properties) {
 });
 
 connection.on("ReceiveUpdate", function (selecteddbId, updateResult, message) {
-  showUpdateResult(selecteddbId, updateResult)
+  showUpdateResult(selecteddbId, updateResult);
   console.log(message);
 });
 
 connection.on("ReceiveModification", function (selecteddbId, properties, urn) {
   let disableNotification = $('#disablenotifications')[0].checked;
-  if (urn.replaceAll('=', '') === viewer.model.getSeedUrn() && !disableNotification) {
+  if (urn.replaceAll('=', '') === _viewer.model.getSeedUrn() && !disableNotification) {
     addProperties(selecteddbId, properties);
     showNotification(selecteddbId);
   }

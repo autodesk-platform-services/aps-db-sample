@@ -91,9 +91,8 @@
   background-size: cover;
 }
 
-.alert-boxes {
-  display: flex;
-  /*height: calc(100vh - 56px);*/
+#alert_boxes {
+  margin-left: 45vw;
 }
 
 /* Messages for DB */
