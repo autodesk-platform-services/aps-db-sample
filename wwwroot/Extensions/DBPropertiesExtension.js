@@ -68,10 +68,10 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
         const group = propsForObject[groupName];
         for (const propName in group) {
           const propValue = group[propName];
-          this.addProperty(propName, propValue, CustomCategoryName);
-          let element = this.tree.getElementForNode({ name: propName, value: propValue, category: CustomCategoryName });
-          
-          //Here with input
+          if (!this.tree.getElementForNode({ name: propName, value: "", category: CustomCategoryName })) {
+            this.addProperty(propName, "", CustomCategoryName);
+          }
+          let element = this.tree.getElementForNode({ name: propName, value: "", category: CustomCategoryName });
           let inputValue = _document.createElement("input");
           inputValue.type = "text";
           inputValue.placeholder = propValue;
@@ -87,9 +87,8 @@ class DBPropertyPanel extends Autodesk.Viewing.Extensions.ViewerPropertyPanel {
     }
   }
 
-  async updateCurrentProperty(newValue) {
+  updateCurrentProperty(newValue) {
     this.properties[this.dbId][this.currentProperty.category][this.currentProperty.name] = newValue;
-    this.setdbIdProperty(this.dbId);
     this.currentProperty.value = newValue;
   }
 

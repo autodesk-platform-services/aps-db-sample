@@ -33,8 +33,8 @@ connection.on("ReceiveUpdate", function (selecteddbId, updateResult, message) {
 });
 
 connection.on("ReceiveModification", function (selecteddbId, properties, urn) {
-  let disableNotification = $('#disablenotifications')[0].checked;
-  if (urn.replaceAll('=', '') === _viewer.model.getSeedUrn() && !disableNotification) {
+  //let disableNotification = $('#disablenotifications')[0].checked;
+  if (urn.replaceAll('=', '') === _viewer.model.getSeedUrn() /*&& !disableNotification*/) {
     addProperties(selecteddbId, properties);
     showNotification(selecteddbId);
   }
