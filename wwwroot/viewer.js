@@ -16,7 +16,10 @@ async function getAccessToken(callback) {
 export function initViewer(container) {
   return new Promise(function (resolve, reject) {
     Autodesk.Viewing.Initializer({ getAccessToken }, async function () {
-      const viewer = new Autodesk.Viewing.GuiViewer3D(container);
+      const config = {
+        extensions: ['Autodesk.DocumentBrowser', 'Autodesk.VisualClusters']
+      };
+      const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
       viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, () => viewer.loadExtension('DBPropertiesExtension', { "properties": {} }));
       viewer.start();
       viewer.setTheme('light-theme');
