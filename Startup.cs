@@ -24,7 +24,7 @@ public class Startup
 		var ForgeCallbackURL = Configuration["FORGE_CALLBACK_URL"];
 		var ForgeBucket = Configuration["FORGE_BUCKET"]; // Optional
 		var mongoDBConnectionString = Configuration["MONGODB_CON_STRING"];
-		var mongoDBName = Configuration["MONGODG_DBNAME"];
+		var mongoDBName = Configuration["MONGODB_DBNAME"];
 		var mongoDBCollection = Configuration["MONGODB_COLLECTION"];
 		var mongoDBProperties = Configuration["DB_PROPERTIES_NAMES"];
 		if (string.IsNullOrEmpty(ForgeClientID) || string.IsNullOrEmpty(ForgeClientSecret) || string.IsNullOrEmpty(ForgeCallbackURL))
