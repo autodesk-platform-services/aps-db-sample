@@ -53,7 +53,7 @@ Clone this project or download it.
 We recommend installing [GitHub desktop](https://desktop.github.com/).
 To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-    git clone https://github.com/JoaoMartins-Forge/forge-db-sample
+    git clone https://github.com/Autodesk-Forge/forge-db-sample
 
 
 **Environment variables**
