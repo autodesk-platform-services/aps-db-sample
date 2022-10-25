@@ -34,7 +34,7 @@
 }
 
 #header > * {
-  height: 1em;
+  height: 2em;
   margin: 0 0.5em;
 }
 
@@ -64,6 +64,10 @@
     top: 25%;
     bottom: 0;
   }
+}
+
+.logo{
+  height: 1em;
 }
 
 .icon-hub:before {
