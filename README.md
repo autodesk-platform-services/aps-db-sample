@@ -15,20 +15,20 @@ First, Reading the Data from DB and aggregating into property Panel.
 
 ![](README/READFROMDB.png)
 
-1 - User select an element from view, which triggers a job to retrieve associated properties (from this element) from an external DB (MongoDB in this sample)
+1 - User select an element from the scene, which triggers a job to retrieve associated properties (specific to this element) from an external DB (MongoDB in this case)
 
-2 - A task retrieves the associated properties from the external DB based on environment variable properties.
+2 - A task retrieves the associated properties from the external DB.
 
-3 - If those properties exists they are returned and aggregated to the properties panel with an input so the user can change them. If not, the properties are aggregated on properties panel as blank inputs, so user car write values to those, creating new values in the external DB
+3 - If those properties exists they are returned and aggregated to the properties panel inside an input element, so the user can change them. If not, the properties are aggregated on properties panel as blank inputs, so user can write values to those, creating new values in the external DB.
 
 
 Then, updating the properties from Viewer.
 
 ![](README/UPDATEDBDATA.png)
 
-1 - User update a custom parameter on viewer’s property panel, which triggers a job to update this parameters value from an external DB (MongoDB in this sample).
+1 - User update a custom parameter on viewer’s property panel inputs, which triggers a job to update this parameters value in the external DB (MongoDB in this case).
 
-2 - A task updates the property value (or create it if it doesn’t exists).
+2 - A task updates the property value (or create it, if it doesn’t exists).
 
 3 - The client that triggered the task (A) get notified about the result, while other clients (B and C) receives a notification with the changed/created value.
 
