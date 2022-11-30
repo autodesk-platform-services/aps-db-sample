@@ -64,7 +64,7 @@ At the `.appsettings.Development.json`, find the env vars and add your APS Clien
   "APS_CALLBACK_URL": "http://localhost:8080/api/auth/callback",
   "APS_BUCKET": "your bucket name",
   "MONGODB_CON_STRING": "your MongoDB connection string",
-  "MONGODG_DBNAME": "your MongoDB DB name",
+  "MONGODB_DBNAME": "your MongoDB DB name",
   "MONGODB_COLLECTION": "your MongoDB collection name",
   "DB_PROPERTIES_NAMES": "your comma separated properties"
 ```
