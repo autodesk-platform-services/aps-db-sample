@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>forge_db_sample</RootNamespace>
+    <RootNamespace>aps_db_sample</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

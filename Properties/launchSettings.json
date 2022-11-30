@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "forge_db_sample": {
+    "aps_db_sample": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

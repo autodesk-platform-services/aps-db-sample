@@ -11,47 +11,47 @@ using Newtonsoft.Json.Linq;
 [Route("api/[controller]")]
 public class ModelsController : ControllerBase
 {
-	public record BucketObject(string name, string urn);
+  public record BucketObject(string name, string urn);
 
-	private readonly ForgeService _forgeService;
+  private readonly APSService _APSService;
 
-	public ModelsController(ForgeService forgeService)
-	{
-		_forgeService = forgeService;
-	}
+  public ModelsController(APSService APSService)
+  {
+    _APSService = APSService;
+  }
 
-	[HttpGet()]
-	public async Task<IEnumerable<BucketObject>> GetModels()
-	{
-		var objects = await _forgeService.GetObjects();
-		return from o in objects
-					 select new BucketObject(o.ObjectKey, ForgeService.Base64Encode(o.ObjectId));
-	}
+  [HttpGet()]
+  public async Task<IEnumerable<BucketObject>> GetModels()
+  {
+    var objects = await _APSService.GetObjects();
+    return from o in objects
+           select new BucketObject(o.ObjectKey, APSService.Base64Encode(o.ObjectId));
+  }
 
-	[HttpGet("bucket")]
-	public async Task<dynamic> GetBucketName()
-	{
-		string bucketKey = await _forgeService.GetBucketKey();
-		dynamic bucket = new JObject();
-		bucket.name = bucketKey;
-		return JsonConvert.SerializeObject(bucket);
-	}
+  [HttpGet("bucket")]
+  public async Task<dynamic> GetBucketName()
+  {
+    string bucketKey = await _APSService.GetBucketKey();
+    dynamic bucket = new JObject();
+    bucket.name = bucketKey;
+    return JsonConvert.SerializeObject(bucket);
+  }
 
-	[HttpGet("{urn}/status")]
-	public async Task<TranslationStatus> GetModelStatus(string urn)
-	{
-		try
-		{
-			var status = await _forgeService.GetTranslationStatus(urn);
-			return status;
-		}
-		catch (Autodesk.Forge.Client.ApiException ex)
-		{
-			if (ex.ErrorCode == 404)
-				return new TranslationStatus("n/a", "", new List<string>());
-			else
-				throw ex;
-		}
-	}
+  [HttpGet("{urn}/status")]
+  public async Task<TranslationStatus> GetModelStatus(string urn)
+  {
+    try
+    {
+      var status = await _APSService.GetTranslationStatus(urn);
+      return status;
+    }
+    catch (Autodesk.Forge.Client.ApiException ex)
+    {
+      if (ex.ErrorCode == 404)
+        return new TranslationStatus("n/a", "", new List<string>());
+      else
+        throw ex;
+    }
+  }
 
 }
