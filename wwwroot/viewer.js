@@ -1,5 +1,4 @@
-﻿/// import * as Autodesk from "@types/forge-viewer";
-
+﻿
 async function getAccessToken(callback) {
   try {
     const resp = await fetch('/api/auth/token');

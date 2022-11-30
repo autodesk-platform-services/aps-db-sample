@@ -10,7 +10,7 @@ try {
     const user = await resp.json();
     login.innerText = `Logout (${user.name})`;
     login.onclick = () => {
-      // Log the user out (see https://forge.autodesk.com/blog/log-out-forge)
+      // Log the user out (see https://aps.autodesk.com/blog/log-out-forge)
       const iframe = document.createElement('iframe');
       iframe.style.visibility = 'hidden';
       iframe.src = 'https://accounts.autodesk.com/Authentication/LogOut';
