@@ -5,6 +5,10 @@
 [![MIT](https://img.shields.io/badge/License-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 [![Level](https://img.shields.io/badge/Level-Intermediate-blue.svg)](http://developer.autodesk.com/)
 
+## Thumbnail
+
+![Thumbnail](thumbnail.png)
+
 ## Description
 
 This sample demonstrates how to connect with an external DB on demand, adding custom properties to Viewer property panel.
