@@ -1,26 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
-using Autodesk.Forge;
-using Autodesk.Forge.Client;
-using Autodesk.Forge.Model;
+using Autodesk.Oss;
+using Autodesk.Oss.Model;
 
 public partial class APSService
 {
   private async Task EnsureBucketExists(string bucketKey)
   {
+    const string region = "US";
     var token = await GetInternalToken();
-    var api = new BucketsApi();
-    api.Configuration.AccessToken = token.AccessToken;
     try
     {
-      await api.GetBucketDetailsAsync(bucketKey);
+      await _ossClient.GetBucketDetailsAsync(bucketKey, accessToken: token.InternalToken);
     }
-    catch (ApiException e)
+    catch (OssApiException e)
     {
-      if (e.ErrorCode == 404)
+      if (e.StatusCode == HttpStatusCode.NotFound)
       {
-        await api.CreateBucketAsync(new PostBucketsPayload(bucketKey, null, PostBucketsPayload.PolicyKeyEnum.Temporary));
+        var payload = new CreateBucketsPayload
+        {
+          BucketKey = bucketKey,
+          PolicyKey = "persistent"
+        };
+        await _ossClient.CreateBucketAsync(region, payload, token.InternalToken);
       }
       else
       {
@@ -34,15 +38,13 @@ public partial class APSService
     const int PageSize = 64;
     await EnsureBucketExists(_bucket);
     var token = await GetInternalToken();
-    var api = new ObjectsApi();
-    api.Configuration.AccessToken = token.AccessToken;
     var results = new List<ObjectDetails>();
-    var response = (await api.GetObjectsAsync(_bucket, PageSize)).ToObject<BucketObjects>();
+    var response = await _ossClient.GetObjectsAsync(_bucket, PageSize, accessToken: token.InternalToken);
     results.AddRange(response.Items);
     while (!string.IsNullOrEmpty(response.Next))
     {
       var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(response.Next).Query);
-      response = (await api.GetObjectsAsync(_bucket, PageSize, null, queryParams["startAt"])).ToObject<BucketObjects>();
+      response = await _ossClient.GetObjectsAsync(_bucket, PageSize, null, queryParams["startAt"], accessToken: token.InternalToken);
       results.AddRange(response.Items);
     }
     return results;

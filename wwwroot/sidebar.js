@@ -31,16 +31,16 @@ async function getContents(hubId, projectId, folderId = null) {
   const contents = await getJSON(`/api/hubs/${hubId}/projects/${projectId}/contents` + (folderId ? `?folder_id=${folderId}` : ''));
   return contents.map(item => {
     if (item.type === 'folders') {
-      return createTreeNode(`folder|${hubId}|${projectId}|${item.id}`, item.attributes.displayName, 'icon-my-folder', true);
+      return createTreeNode(`folder|${hubId}|${projectId}|${item.id}`, item.name, 'icon-my-folder', true);
     } else {
-      return createTreeNode(`item|${hubId}|${projectId}|${item.id}`, item.attributes.displayName, 'icon-item', true);
+      return createTreeNode(`item|${hubId}|${projectId}|${item.id}`, item.name, 'icon-item', true);
     }
   });
 }
 
 async function getVersions(hubId, projectId, itemId) {
   const versions = await getJSON(`/api/hubs/${hubId}/projects/${projectId}/contents/${itemId}/versions`);
-  return versions.map(version => createTreeNode(`version|${version.id}`, version.attributes.createTime, 'icon-version'));
+  return versions.map(version => createTreeNode(`version|${version.id}`, version.createTime, 'icon-version'));
 }
 
 async function getObjects() {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,12 +46,9 @@ public class ModelsController : ControllerBase
       var status = await _APSService.GetTranslationStatus(urn);
       return status;
     }
-    catch (Autodesk.Forge.Client.ApiException ex)
+    catch (Exception ex)
     {
-      if (ex.ErrorCode == 404)
-        return new TranslationStatus("n/a", "", new List<string>());
-      else
-        throw ex;
+      return new TranslationStatus("N/A", ex.Message, null);
     }
   }
 

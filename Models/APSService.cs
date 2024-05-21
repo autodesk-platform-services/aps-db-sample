@@ -1,5 +1,11 @@
 ﻿using System;
-using Autodesk.Forge;
+using System.Collections.Generic;
+using Autodesk.Authentication;
+using Autodesk.Authentication.Model;
+using Autodesk.DataManagement;
+using Autodesk.ModelDerivative;
+using Autodesk.Oss;
+using Autodesk.SDKManager;
 
 public class Tokens
 {
@@ -15,8 +21,12 @@ public partial class APSService
   private readonly string _clientSecret;
   private readonly string _callbackUri;
   private readonly string _bucket;
-  private readonly Scope[] InternalTokenScopes = new Scope[] { Scope.DataRead, Scope.ViewablesRead };
-  private readonly Scope[] PublicTokenScopes = new Scope[] { Scope.ViewablesRead };
+  private readonly AuthenticationClient _authClient;
+  private readonly DataManagementClient _dataManagementClient;
+  private readonly ModelDerivativeClient _modelDerivativeClient;
+  private readonly OssClient _ossClient;
+  private readonly List<Scopes> InternalTokenScopes = new List<Scopes> { Scopes.DataRead, Scopes.ViewablesRead };
+  private readonly List<Scopes> PublicTokenScopes = new List<Scopes> { Scopes.DataRead, Scopes.ViewablesRead };
 
   public APSService(string clientId, string clientSecret, string callbackUri, string bucket = null)
   {
@@ -24,5 +34,12 @@ public partial class APSService
     _clientSecret = clientSecret;
     _callbackUri = callbackUri;
     _bucket = string.IsNullOrEmpty(bucket) ? string.Format("{0}-basic-app", _clientId.ToLower()) : bucket;
+    SDKManager sdkManager = SdkManagerBuilder
+      .Create() // Creates SDK Manager Builder itself.
+      .Build();
+    _authClient = new AuthenticationClient(sdkManager);
+    _dataManagementClient = new DataManagementClient(sdkManager);
+    _modelDerivativeClient = new ModelDerivativeClient(sdkManager);
+    _ossClient = new OssClient(sdkManager);
   }
 }

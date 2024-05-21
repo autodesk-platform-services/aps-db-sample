@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Autodesk.Forge;
+using Autodesk.ModelDerivative;
+using Autodesk.ModelDerivative.Model;
 
 public record TranslationStatus(string Status, string Progress, IEnumerable<string>? Messages);
 
@@ -15,20 +16,8 @@ public partial class APSService
   public async Task<TranslationStatus> GetTranslationStatus(string urn)
   {
     var token = await GetInternalToken();
-    var api = new DerivativesApi();
-    api.Configuration.AccessToken = token.AccessToken;
-    var json = (await api.GetManifestAsync(urn)).ToJson();
+    Manifest manifest = await _modelDerivativeClient.GetManifestAsync(urn, Autodesk.ModelDerivative.Model.Region.US, accessToken: token.InternalToken);
     var messages = new List<string>();
-    foreach (var message in json.SelectTokens("$.derivatives[*].messages[?(@.type == 'error')].message"))
-    {
-      if (message.Type == Newtonsoft.Json.Linq.JTokenType.String)
-        messages.Add((string)message);
-    }
-    foreach (var message in json.SelectTokens("$.derivatives[*].children[*].messages[?(@.type == 'error')].message"))
-    {
-      if (message.Type == Newtonsoft.Json.Linq.JTokenType.String)
-        messages.Add((string)message);
-    }
-    return new TranslationStatus((string)json["status"], (string)json["progress"], messages);
+    return new TranslationStatus(manifest.Status, manifest.Status, messages);
   }
 }

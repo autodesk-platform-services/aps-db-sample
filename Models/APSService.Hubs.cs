@@ -1,34 +1,19 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Autodesk.Forge;
-using Autodesk.Forge.Model;
+using Autodesk.DataManagement.Model;
 
 public partial class APSService
 {
-  public async Task<IEnumerable<dynamic>> GetHubs(Tokens tokens)
+  public async Task<List<HubsData>> GetHubs(Tokens tokens)
   {
-    var hubs = new List<dynamic>();
-    var api = new HubsApi();
-    api.Configuration.AccessToken = tokens.InternalToken;
-    var response = await api.GetHubsAsync();
-    foreach (KeyValuePair<string, dynamic> hub in new DynamicDictionaryItems(response.data))
-    {
-      hubs.Add(hub.Value);
-    }
-    return hubs;
+    Hubs hubs = await _dataManagementClient.GetHubsAsync(accessToken: tokens.InternalToken);
+    return hubs.Data;
   }
 
-  public async Task<IEnumerable<dynamic>> GetProjects(string hubId, Tokens tokens)
+  public async Task<List<ProjectsData>> GetProjects(string hubId, Tokens tokens)
   {
-    var projects = new List<dynamic>();
-    var api = new ProjectsApi();
-    api.Configuration.AccessToken = tokens.InternalToken;
-    var response = await api.GetHubProjectsAsync(hubId);
-    foreach (KeyValuePair<string, dynamic> project in new DynamicDictionaryItems(response.data))
-    {
-      projects.Add(project.Value);
-    }
-    return projects;
+    Projects projects = await _dataManagementClient.GetHubProjectsAsync(hubId, accessToken: tokens.InternalToken);
+    return projects.Data;
   }
 
   public async Task<IEnumerable<dynamic>> GetContents(string hubId, string projectId, string? folderId, Tokens tokens)
@@ -36,22 +21,28 @@ public partial class APSService
     var contents = new List<dynamic>();
     if (string.IsNullOrEmpty(folderId))
     {
-      var api = new ProjectsApi();
-      api.Configuration.AccessToken = tokens.InternalToken;
-      var response = await api.GetProjectTopFoldersAsync(hubId, projectId);
-      foreach (KeyValuePair<string, dynamic> folders in new DynamicDictionaryItems(response.data))
+      TopFolders topFolders = await _dataManagementClient.GetProjectTopFoldersAsync(hubId, projectId, accessToken: tokens.InternalToken);
+      foreach (TopFoldersData topFolderData in topFolders.Data)
       {
-        contents.Add(folders.Value);
+        contents.Add(new
+        {
+          type = topFolderData.Type,
+          id = topFolderData.Id,
+          name = topFolderData.Attributes.DisplayName
+        });
       }
     }
     else
     {
-      var api = new FoldersApi();
-      api.Configuration.AccessToken = tokens.InternalToken;
-      var response = await api.GetFolderContentsAsync(projectId, folderId); // TODO: add paging
-      foreach (KeyValuePair<string, dynamic> item in new DynamicDictionaryItems(response.data))
+      FolderContents folderContents = await _dataManagementClient.GetFolderContentsAsync(projectId, folderId, accessToken: tokens.InternalToken);
+      foreach (FolderContentsData folderContentData in folderContents.Data)
       {
-        contents.Add(item.Value);
+        contents.Add(new
+        {
+          type = folderContentData.Type,
+          id = folderContentData.Id,
+          name = folderContentData.Attributes.DisplayName
+        });
       }
     }
     return contents;
@@ -60,12 +51,14 @@ public partial class APSService
   public async Task<IEnumerable<dynamic>> GetVersions(string hubId, string projectId, string itemId, Tokens tokens)
   {
     var versions = new List<dynamic>();
-    var api = new ItemsApi();
-    api.Configuration.AccessToken = tokens.InternalToken;
-    var response = await api.GetItemVersionsAsync(projectId, itemId);
-    foreach (KeyValuePair<string, dynamic> version in new DynamicDictionaryItems(response.data))
+    Versions versionsData = await _dataManagementClient.GetItemVersionsAsync(projectId, itemId, accessToken: tokens.InternalToken);
+    foreach (VersionsData version in versionsData.Data)
     {
-      versions.Add(version.Value);
+      versions.Add(new
+      {
+        id = version.Id,
+        createTime = version.Attributes.CreateTime
+      });
     }
     return versions;
   }

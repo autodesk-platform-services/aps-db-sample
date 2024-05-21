@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Autodesk.Authentication.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -79,10 +80,10 @@ public class AuthController : ControllerBase
     {
       return Unauthorized();
     }
-    dynamic profile = await _APSService.GetUserProfile(tokens);
+    UserInfo profile = await _APSService.GetUserProfile(tokens);
     return new
     {
-      name = string.Format("{0} {1}", profile.firstName, profile.lastName)
+      name = profile.Name
     };
   }
 
@@ -91,7 +92,7 @@ public class AuthController : ControllerBase
   {
     var token = await _APSService.GetPublicToken();
     return new AccessToken(
-        token.AccessToken,
+        token.PublicToken,
         (long)Math.Round((token.ExpiresAt - DateTime.UtcNow).TotalSeconds)
     );
   }
